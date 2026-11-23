@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Volunteers page — mockup</title>
+  <link rel="stylesheet" href="../../../docs/_design/style.css">
+  <link rel="stylesheet" href="members.css">
+</head>
+<body>
+  <section class="frame" lang="fr">
+    <div class="frame-label">Display language fr, alice signed in, page opened</div>
+    <header class="site-header">
+      <h1><a href="home-page.html">Prêt d'outils</a></h1>
+      <span class="signed-in">alice</span>
+      <button>Se déconnecter</button>
+    </header>
+    <main>
+      <h2>Bénévoles</h2>
+      <p><a class="nav-link" href="dashboard-page.html">Tableau de bord</a></p>
+      <ul class="volunteer-list">
+        <li>
+          <span class="login">alice</span>
+          <input type="password" aria-label="Nouveau mot de passe" placeholder="Nouveau mot de passe">
+          <button>Changer le mot de passe</button>
+          <button class="danger">Retirer</button>
+        </li>
+        <li>
+          <span class="login">bob</span>
+          <input type="password" aria-label="Nouveau mot de passe" placeholder="Nouveau mot de passe">
+          <button>Changer le mot de passe</button>
+          <button class="danger">Retirer</button>
+        </li>
+      </ul>
+      <form class="stacked-form panel">
+        <h3>Ajouter un bénévole</h3>
+        <label>Identifiant <input type="text" name="login"></label>
+        <label>Mot de passe <input type="password" name="password"></label>
+        <button class="primary">Ajouter</button>
+      </form>
+    </main>
+  </section>
+
+  <section class="frame" lang="fr">
+    <div class="frame-label">Display language fr, alice signed in, dan added</div>
+    <header class="site-header">
+      <h1><a href="home-page.html">Prêt d'outils</a></h1>
+      <span class="signed-in">alice</span>
+      <button>Se déconnecter</button>
+    </header>
+    <main>
+      <h2>Bénévoles</h2>
+      <p><a class="nav-link" href="dashboard-page.html">Tableau de bord</a></p>
+      <p class="message done">dan a été ajouté aux bénévoles.</p>
+      <ul class="volunteer-list">
+        <li>
+          <span class="login">alice</span>
+          <input type="password" aria-label="Nouveau mot de passe" placeholder="Nouveau mot de passe">
+          <button>Changer le mot de passe</button>
+          <button class="danger">Retirer</button>
+        </li>
+        <li>
+          <span class="login">bob</span>
+          <input type="password" aria-label="Nouveau mot de passe" placeholder="Nouveau mot de passe">
+          <button>Changer le mot de passe</button>
+          <button class="danger">Retirer</button>
+        </li>
+        <li>
+          <span class="login">dan</span>
+          <input type="password" aria-label="Nouveau mot de passe" placeholder="Nouveau mot de passe">
+          <button>Changer le mot de passe</button>
+          <button class="danger">Retirer</button>
+        </li>
+      </ul>
+      <form class="stacked-form panel">
+        <h3>Ajouter un bénévole</h3>
+        <label>Identifiant <input type="text" name="login"></label>
+        <label>Mot de passe <input type="password" name="password"></label>
+        <button class="primary">Ajouter</button>
+      </form>
+    </main>
+  </section>
+
+  <section class="frame" lang="en">
+    <div class="frame-label">Display language en, alice signed in, password of bob set</div>
+    <header class="site-header">
+      <h1><a href="home-page.html">Tool Lending</a></h1>
+      <span class="signed-in">alice</span>
+      <button>Sign out</button>
+    </header>
+    <main>
+      <h2>Volunteers</h2>
+      <p><a class="nav-link" href="dashboard-page.html">Dashboard</a></p>
+      <p class="message done">The password of bob was set.</p>
+      <ul class="volunteer-list">
+        <li>
+          <span class="login">alice</span>
+          <input type="password" aria-label="New password" placeholder="New password">
+          <button>Set password</button>
+          <button class="danger">Remove</button>
+        </li>
+        <li>
+          <span class="login">bob</span>
+          <input type="password" aria-label="New password" placeholder="New password">
+          <button>Set password</button>
+          <button class="danger">Remove</button>
+        </li>
+      </ul>
+      <form class="stacked-form panel">
+        <h3>Add a volunteer</h3>
+        <label>Login <input type="text" name="login"></label>
+        <label>Password <input type="password" name="password"></label>
+        <button class="primary">Add</button>
+      </form>
+    </main>
+  </section>
+
+  <section class="frame" lang="en">
+    <div class="frame-label">Display language en, alice signed in, bob removed</div>
+    <header class="site-header">
+      <h1><a href="home-page.html">Tool Lending</a></h1>
+      <span class="signed-in">alice</span>
+      <button>Sign out</button>
+    </header>
+    <main>
+      <h2>Volunteers</h2>
+      <p><a class="nav-link" href="dashboard-page.html">Dashboard</a></p>
+      <p class="message done">bob was removed from the volunteers.</p>
+      <ul class="volunteer-list">
+        <li>
+          <span class="login">alice</span>
+          <input type="password" aria-label="New password" placeholder="New password">
+          <button>Set password</button>
+          <button class="danger">Remove</button>
+        </li>
+      </ul>
+      <form class="stacked-form panel">
+        <h3>Add a volunteer</h3>
+        <label>Login <input type="text" name="login"></label>
+        <label>Password <input type="password" name="password"></label>
+        <button class="primary">Add</button>
+      </form>
+    </main>
+  </section>
+
+  <section class="frame" lang="en">
+    <div class="frame-label">Display language en, alice signed in, refused</div>
+    <header class="site-header">
+      <h1><a href="home-page.html">Tool Lending</a></h1>
+      <span class="signed-in">alice</span>
+      <button>Sign out</button>
+    </header>
+    <main>
+      <h2>Volunteers</h2>
+      <p><a class="nav-link" href="dashboard-page.html">Dashboard</a></p>
+      <p class="message error">The login bob is already taken.</p>
+      <ul class="volunteer-list">
+        <li>
+          <span class="login">alice</span>
+          <input type="password" aria-label="New password" placeholder="New password">
+          <button>Set password</button>
+          <button class="danger">Remove</button>
+        </li>
+        <li>
+          <span class="login">bob</span>
+          <input type="password" aria-label="New password" placeholder="New password">
+          <button>Set password</button>
+          <button class="danger">Remove</button>
+        </li>
+      </ul>
+      <form class="stacked-form panel">
+        <h3>Add a volunteer</h3>
+        <label>Login <input type="text" name="login"></label>
+        <label>Password <input type="password" name="password"></label>
+        <button class="primary">Add</button>
+      </form>
+    </main>
+  </section>
+</body>
+</html>

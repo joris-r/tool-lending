@@ -2,7 +2,7 @@
 
 Several associations share one installation, each with its own data.
 The operator creates each association and its first volunteer; the
-volunteers of an association sign in.
+volunteers of an association sign in and manage its volunteers.
 
 ## Outline
 
@@ -14,10 +14,14 @@ volunteers of an association sign in.
    /operations/show-sign-in-page, /operations/sign-in,
    /operations/sign-out, /operations/show-dashboard,
    /operations/create-association,
-   /operations/reset-password, /ui/home-page, /ui/sign-in-page,
-   /ui/dashboard-page, /contents/home-page, /contents/sign-in-page,
-   /contents/dashboard-page, /scenarios/first-volunteer,
-   /scenarios/former-volunteer, /scenarios/password-guessing,
+   /operations/reset-password, /operations/show-volunteers,
+   /operations/add-volunteer, /operations/set-password,
+   /operations/remove-volunteer, /ui/home-page, /ui/sign-in-page,
+   /ui/dashboard-page, /ui/volunteers-page, /contents/home-page,
+   /contents/sign-in-page, /contents/dashboard-page,
+   /contents/volunteers-page, /scenarios/first-volunteer,
+   /scenarios/former-volunteer, /scenarios/new-volunteer,
+   /scenarios/removed-volunteer, /scenarios/password-guessing,
    /scenarios/other-association.
 
 ## Lessons

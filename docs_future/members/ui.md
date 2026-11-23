@@ -40,8 +40,46 @@ then, top to bottom:
 - [header] the app name of /contents/home-page, as a link to the Home
   page, then the signed-in volunteer's login, then the sign-out
   button, labelled as in /contents/dashboard-page;
-- [name] the association's name, as the page's heading.
+- [name] the association's name, as the page's heading;
+- [volunteers] the volunteers link, to the Volunteers page, reading as
+  in /contents/dashboard-page.
 
 Actions:
 - [sign-out] The sign-out button clicked: runs /operations/sign-out;
   the Home page then shows.
+
+## Volunteers page
+
+At `/volunteers`, run by /operations/show-volunteers, and answered by
+/operations/add-volunteer, /operations/set-password and
+/operations/remove-volunteer, except when they answer 303.
+
+Shows:
+- [title] as its document title, the title of
+  /contents/volunteers-page;
+
+then, top to bottom:
+- [header] the header of the Dashboard page;
+- [heading] the title of /contents/volunteers-page;
+- [dashboard] the dashboard link, to the Dashboard page, reading as in
+  /contents/volunteers-page;
+- [done] only when answered by a case that is not refused: the message
+  of /contents/volunteers-page for it, naming the login of the input;
+- [refused] only when answered by a refused case: its message;
+- [list] the association's volunteers, in alphabetical order of login,
+  each with their login, an empty password field, the set-password
+  button and the remove button, labelled as in
+  /contents/volunteers-page;
+- [add] the add form, under its heading: a login field and a password
+  field, both empty, then the add button, labelled as in
+  /contents/volunteers-page.
+
+Actions:
+- [set-password] A volunteer's set-password button clicked: runs
+  /operations/set-password with their login and their password field.
+- [remove] A volunteer's remove button clicked: runs
+  /operations/remove-volunteer with their login; when it answers 303,
+  the Home page then shows.
+- [add-volunteer] The add button clicked: runs
+  /operations/add-volunteer with the two fields of the add form.
+- [sign-out] The sign-out button clicked: as on the Dashboard page.
