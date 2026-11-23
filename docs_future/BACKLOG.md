@@ -7,8 +7,8 @@
 - Hide the password typed into the operator commands.
 - Make the scrypt cost configurable for tests, to shorten the test and
   mutation runs (about 118 minutes now).
-- Project CLAUDE.md: in Tests, check that each new browser test reaches
-  the operation it targets before the stub fails.
+- Test and quality policy: before Implementation, each new test must
+  fail at the operation it targets, not earlier in its setup.
 - Answer the operations of the Volunteers, Members, Member and Member
   deletion pages by a redirect (Post/Redirect/Get), so that a reload
   does not repeat them.
