@@ -10,4 +10,13 @@ export const fr: Texts = {
   notFound: "Cette page n'existe pas.",
   internalError: "Une erreur interne est survenue.",
   backHome: "Retour à l'accueil",
+  signInLink: "Se connecter",
+  dashboardLink: "Tableau de bord",
+  signInTitle: "Connexion",
+  signInFailed:
+    "Identifiant ou mot de passe incorrect, ou trop de tentatives : attendez quelques minutes et réessayez.",
+  loginLabel: "Identifiant",
+  passwordLabel: "Mot de passe",
+  signInButton: "Se connecter",
+  signOutButton: "Se déconnecter",
 };

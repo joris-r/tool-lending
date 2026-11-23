@@ -1,4 +1,5 @@
 import { TEXTS, otherLanguage, type Language } from "../locales/index.js";
+import type { SignedIn } from "../store.js";
 import { html, type Html } from "./html.js";
 
 function layout(
@@ -22,9 +23,12 @@ function layout(
     </html> `.value;
 }
 
-export function homePage(language: Language): string {
+export function homePage(language: Language, signedIn: boolean): string {
   const t = TEXTS[language];
   const other = otherLanguage(language);
+  const account = signedIn
+    ? html`<a class="account-link" href="/dashboard">${t.dashboardLink}</a>`
+    : html`<a class="account-link" href="/sign-in">${t.signInLink}</a>`;
   const header = html`<header class="site-header">
     <h1>${t.appName}</h1>
     <form method="post" action="/language">
@@ -33,6 +37,7 @@ export function homePage(language: Language): string {
         ${TEXTS[other].switchTo}
       </button>
     </form>
+    ${account}
   </header>`;
   return layout(language, t.appName, header, html`<p>${t.welcome}</p>`);
 }
@@ -48,5 +53,60 @@ export function refusalPage(language: Language, message: string): string {
     header,
     html`<p>${message}</p>
       <p><a href="/">${t.backHome}</a></p>`,
+  );
+}
+
+/** The app name, as a link to the Home page. */
+function homeLink(language: Language): Html {
+  return html`<h1><a href="/">${TEXTS[language].appName}</a></h1>`;
+}
+
+export function signInPage(language: Language, failed: boolean): string {
+  const t = TEXTS[language];
+  const header = html`<header class="site-header">
+    ${homeLink(language)}
+  </header>`;
+  const message = failed
+    ? html`<p class="message error" role="alert">${t.signInFailed}</p>`
+    : html``;
+  return layout(
+    language,
+    t.signInTitle,
+    header,
+    html`<h2>${t.signInTitle}</h2>
+      ${message}
+      <form class="stacked-form panel" method="post" action="/sign-in">
+        <label
+          >${t.loginLabel}
+          <input type="text" name="login" autocomplete="username" required />
+        </label>
+        <label
+          >${t.passwordLabel}
+          <input
+            type="password"
+            name="password"
+            autocomplete="current-password"
+            required
+          />
+        </label>
+        <button type="submit" class="primary">${t.signInButton}</button>
+      </form>`,
+  );
+}
+
+export function dashboardPage(language: Language, signedIn: SignedIn): string {
+  const t = TEXTS[language];
+  const header = html`<header class="site-header">
+    ${homeLink(language)}
+    <span class="signed-in">${signedIn.login}</span>
+    <form method="post" action="/sign-out">
+      <button type="submit">${t.signOutButton}</button>
+    </form>
+  </header>`;
+  return layout(
+    language,
+    signedIn.associationName,
+    header,
+    html`<h2>${signedIn.associationName}</h2>`,
   );
 }

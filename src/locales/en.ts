@@ -10,4 +10,13 @@ export const en: Texts = {
   notFound: "This page does not exist.",
   internalError: "An internal error occurred.",
   backHome: "Back to the home page",
+  signInLink: "Sign in",
+  dashboardLink: "Dashboard",
+  signInTitle: "Sign in",
+  signInFailed:
+    "Wrong login or password, or too many attempts: wait a few minutes and try again.",
+  loginLabel: "Login",
+  passwordLabel: "Password",
+  signInButton: "Sign in",
+  signOutButton: "Sign out",
 };

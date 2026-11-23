@@ -7,7 +7,8 @@
     "node": ">=26"
   },
   "scripts": {
-    "dev": "PUBLIC_ORIGIN=http://localhost:3000 tsx watch src/server.ts",
+    "dev": "PUBLIC_ORIGIN=http://localhost:3000 DATABASE_PATH=dev.db tsx watch src/server.ts",
+    "admin": "DATABASE_PATH=dev.db tsx src/admin.ts",
     "start": "node dist/server.js",
     "test": "vitest run",
     "lint": "eslint .",

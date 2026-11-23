@@ -4,7 +4,10 @@ export const STYLE = `:root {
   --muted: #5b6760;
   --accent: #2f6b4f;
   --accent-text: #ffffff;
+  --surface: #ffffff;
   --border: #d9d3c7;
+  --danger: #a33a2c;
+  --error-bg: #f6e3df;
   --radius: 8px;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --max-width: 48rem;
@@ -16,7 +19,10 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 1rem/1.5 var(
   max-width: var(--max-width); margin: 0 auto; padding: 1rem;
   border-bottom: 1px solid var(--border);
 }
-.site-header h1 { margin: 0; font-size: 1.5rem; color: var(--accent); }
+.site-header h1 { margin: 0 auto 0 0; font-size: 1.5rem; color: var(--accent); }
+.site-header h1 a { color: inherit; text-decoration: none; }
+.account-link { color: var(--accent); font-weight: 600; }
+.signed-in { color: var(--muted); }
 .site-header form { margin: 0; }
 .language-switch {
   padding: 0.4rem 0.9rem; border: 1px solid var(--accent); border-radius: var(--radius);
@@ -25,4 +31,22 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 1rem/1.5 var(
 .language-switch:hover, .language-switch:focus-visible { background: var(--accent); color: var(--accent-text); }
 main { max-width: var(--max-width); margin: 0 auto; padding: 1.5rem 1rem; }
 a { color: var(--accent); }
+h2 { margin: 0 0 1rem; color: var(--accent); }
+.panel {
+  margin: 0 0 1.5rem; padding: 1rem; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+}
+.stacked-form { display: grid; gap: 0.75rem; max-width: 22rem; }
+.stacked-form label { display: grid; gap: 0.25rem; }
+input {
+  padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius);
+  font: inherit;
+}
+button {
+  padding: 0.4rem 0.9rem; border: 1px solid var(--accent); border-radius: var(--radius);
+  background: transparent; color: var(--accent); font: inherit; cursor: pointer;
+}
+button.primary { justify-self: start; background: var(--accent); color: var(--accent-text); }
+.message { margin: 0 0 1rem; padding: 0.6rem 0.9rem; border-radius: var(--radius); }
+.message.error { background: var(--error-bg); color: var(--danger); }
 `;

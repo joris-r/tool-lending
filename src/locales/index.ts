@@ -15,6 +15,15 @@ export interface Texts {
   notFound: string;
   internalError: string;
   backHome: string;
+  /** The account link of the Home page, without and with a session. */
+  signInLink: string;
+  dashboardLink: string;
+  signInTitle: string;
+  signInFailed: string;
+  loginLabel: string;
+  passwordLabel: string;
+  signInButton: string;
+  signOutButton: string;
 }
 
 export const TEXTS: Record<Language, Texts> = { fr, en };
