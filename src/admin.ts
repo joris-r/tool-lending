@@ -23,7 +23,6 @@ export interface AdminResult {
   output: string;
 }
 
-// @dev43:unsure
 const USAGE = `Usage:
   node dist/admin.js create-association <name> <login>
   node dist/admin.js reset-password <login>

@@ -30,7 +30,31 @@ register its members.
 
 ## Lessons
 
-- Volunteer sign-in and members: the new mockups load
-  `docs/_design/style.css` by a relative path, then `members.css`; in
-  `docs/_design/`, merge `members.css` into `style.css` and load only
-  that.
+- Manage volunteers, Members: future mockups load
+  `docs/_design/style.css`, then `members.css`; when integrating, move
+  the rules your pages use (`.nav-link` first, which the dashboard patch
+  needs) from `members.css` into `docs/_design/style.css` and
+  `src/views/style.ts`, and have the `docs/_design/` mockups load only
+  `style.css`.
+- Manage volunteers, Members: tests observe the state through
+  `readState` (`src/state.ts`) and check the invariants in `checkState`
+  (`tests/http/helpers.ts`); extend both with the new data, returned in
+  a stable order.
+- Manage volunteers, Members: `request.signedIn` holds the session id,
+  the login and the association's name, not its id; own-association
+  scoping needs the id added.
+- Manage volunteers: closing all sessions of a volunteer is done in
+  `resetPassword` (`src/store.ts`); reuse it for set-password and
+  remove-volunteer.
+- Members: the schema is migrated through `user_version` in
+  `src/db.ts`; a new migration adding the members table gives existing
+  associations no member, as Migrate members states.
+
+## For the human
+
+- Purge expired sessions.
+- Hide the password typed into the operator commands.
+- Make the scrypt cost configurable for tests, to shorten the test and
+  mutation runs.
+- Project CLAUDE.md: in Tests, check that each new browser test reaches
+  the operation it targets before the stub fails.
