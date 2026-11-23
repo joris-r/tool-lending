@@ -8,16 +8,10 @@ register its members.
 ## Outline
 
 1. Volunteer sign-in done.
-2. Manage volunteers: /overview (part), /security/actors (part),
-   /security/threats (part), /operations/general (part),
-   /operations/show-volunteers, /operations/add-volunteer,
-   /operations/set-password, /operations/remove-volunteer,
-   /ui/dashboard-page (part), /ui/volunteers-page,
-   /contents/dashboard-page (part), /contents/volunteers-page,
-   /scenarios/new-volunteer, /scenarios/removed-volunteer.
-3. Members: /overview, /security/actors, /security/threats,
-   /model/association, /model/member, /operations/general,
-   /operations/create-association, /operations/migrate-members,
+2. Manage volunteers done.
+3. Members: /overview, /security/threats, /model/association,
+   /model/member, /operations/general, /operations/create-association,
+   /operations/migrate-members,
    /operations/show-members, /operations/add-member,
    /operations/show-member, /operations/edit-member,
    /operations/show-member-deletion, /operations/delete-member,

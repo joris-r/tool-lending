@@ -10,7 +10,8 @@ The interface is in French by default, and in English at the
 visitor's choice. Member records hold personal data under Quebec's
 Law 25.
 
-This version holds the home page and the volunteers' sign-in.
+This version holds the home page, the volunteers' sign-in, and the
+volunteers' management of the volunteers of their association.
 
 ## Non-goals
 

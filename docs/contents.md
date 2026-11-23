@@ -30,4 +30,21 @@ Structure, in each language:
 Goal: show a volunteer which association they are signed in to.
 
 Structure, in each language:
-- the label of the sign-out button.
+- the label of the sign-out button;
+- the label of the volunteers link.
+
+## Volunteers page
+
+Goal: let a volunteer add and remove the volunteers of their
+association, and set their passwords.
+
+Structure, in each language:
+- the title, as the page's heading and its document title:
+  `Bénévoles` in French, `Volunteers` in English;
+- the label of the dashboard link;
+- the messages after each operation: the volunteer was added, their
+  password was set, they were removed;
+- the labels of the password field, the set-password button and the
+  remove button of a volunteer;
+- the heading of the add form, and the labels of its login and
+  password fields and of its add button.

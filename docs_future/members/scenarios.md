@@ -1,28 +1,5 @@
 # Scenarios
 
-## New volunteer
-
-"alice" is the only volunteer of "Outils du Plateau", signed in.
-
-- Alice clicks the volunteers link of the Dashboard page.
-- In the add form, she types "dan" and a password, and clicks the add
-  button: the Volunteers page lists "alice" and "dan".
-- In another browser, Dan signs in with that password: the Dashboard
-  page shows "Outils du Plateau".
-
-## Removed volunteer
-
-"alice" and "bob" are volunteers of "Outils du Plateau", each signed in
-from their own browser.
-
-- Alice opens the Volunteers page and clicks the remove button of
-  "bob": the page lists only "alice".
-- Bob reloads the Dashboard page: the Sign-in page shows.
-- Bob signs in with their password: the Sign-in page shows the failure
-  message.
-- Alice clicks her own remove button: the Volunteers page shows a
-  refusal message, and still lists "alice".
-
 ## Other association
 
 Plays /security/threats/other-association. "alice" is a volunteer of

@@ -1,20 +1,3 @@
-.nav-link { color: var(--accent); font-weight: 600; }
-.message.done { background: var(--surface); border: 1px solid var(--border); }
-
-.volunteer-list { list-style: none; margin: 0 0 1.5rem; padding: 0; }
-.volunteer-list li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid var(--border);
-}
-.volunteer-list .login { font-weight: 600; min-width: 8rem; margin-right: auto; }
-.volunteer-list input { width: 12rem; max-width: 100%; }
-button.danger { border-color: var(--danger); color: var(--danger); }
-h3 { margin: 0 0 0.75rem; }
-
 .member-list { list-style: none; margin: 0 0 1.5rem; padding: 0; }
 .member-list li {
   display: flex;
