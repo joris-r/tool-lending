@@ -1,0 +1,10 @@
+node_modules
+dist
+reports
+.stryker-tmp
+.git
+tests
+docs
+docs_future
+measures
+*.db

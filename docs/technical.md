@@ -48,8 +48,9 @@
     other than `(not testable)` ones, that at least one test cites.
 - At the final review of every increment that changes tests or code,
   after the checks of its last phase, the measures are recorded in
-  `measures/<increment>.md`: the date, the commit measured, and the
-  four values. The file is committed with the increment's exit
+  `measures/<number>-<increment>.md`, numbered from `001` in the order
+  of the increments: the date, the commit measured, and the four
+  values. The file is committed with the increment's exit
   commit.
 - The measures and their reports never lead to a change of tests or
   code, nor to a backlog entry; no agent reads them while writing

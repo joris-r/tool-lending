@@ -7,13 +7,14 @@
     "node": ">=26"
   },
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "start": "tsx src/server.ts",
+    "dev": "PUBLIC_ORIGIN=http://localhost:3000 tsx watch src/server.ts",
+    "start": "node dist/server.js",
     "test": "vitest run",
     "lint": "eslint .",
     "format": "prettier --write .",
     "check": "tsc --noEmit && eslint . && prettier --check . && vitest run && npm audit --audit-level=high",
-    "measure": "node scripts/measure.mjs"
+    "measure": "node scripts/measure.mjs",
+    "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "fastify": "^5.12.8"
