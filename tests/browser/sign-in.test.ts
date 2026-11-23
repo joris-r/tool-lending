@@ -83,8 +83,8 @@ async function openDashboard(language: "fr" | "en"): Promise<void> {
   expect(new URL(page.url()).pathname).toBe("/dashboard");
 }
 
-async function failSignIn(language: "fr" | "en"): Promise<void> {
-  await openSignIn(language);
+/** Fails a sign-in from the Sign-in page already open. */
+async function failSignIn(): Promise<void> {
   await page.locator('input[name="login"]').fill("nobody");
   await page.locator('input[name="password"]').fill("a wrong password");
   await Promise.all([
@@ -269,7 +269,7 @@ describe.each(["fr", "en"] as const)("Sign-in page in %s", (language) => {
     await openSignIn(language);
     const opened = await page.locator("main").innerText();
     expect(await textBetweenHeadingAndForm(language)).toBe("");
-    await failSignIn(language);
+    await failSignIn();
     expect(await page.getAttribute("html", "lang")).toBe(language);
     expect((await page.title()).trim()).toBe(SIGN_IN_TITLE[language]);
     const failed = await page.locator("main").innerText();
