@@ -40,8 +40,18 @@ export function readState(databasePath: string): State {
   const db = openDatabase(databasePath);
   try {
     const associations = db
-      .prepare("SELECT id, name FROM associations ORDER BY id")
-      .all() as { id: number; name: string }[];
+      .prepare("SELECT id, name, next_member_id FROM associations ORDER BY id")
+      .all() as { id: number; name: string; next_member_id: number }[];
+    const members = db
+      .prepare(
+        "SELECT association_id, id, name, contact FROM members ORDER BY association_id, id",
+      )
+      .all() as {
+      association_id: number;
+      id: number;
+      name: string;
+      contact: string;
+    }[];
     const volunteers = db
       .prepare(
         "SELECT association_id, login, failures, lock_until FROM volunteers ORDER BY id",
@@ -69,8 +79,10 @@ export function readState(databasePath: string): State {
             failures: v.failures,
             lock: v.lock_until === null ? null : new Date(v.lock_until),
           })),
-        members: [],
-        nextMemberId: 0,
+        members: members
+          .filter((m) => m.association_id === a.id)
+          .map((m) => ({ id: m.id, name: m.name, contact: m.contact })),
+        nextMemberId: a.next_member_id,
       })),
       sessions: sessions.map((s) => ({
         login: s.login,

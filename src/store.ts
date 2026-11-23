@@ -320,3 +320,123 @@ export function removeVolunteer(
     return "removed";
   });
 }
+
+export interface Member {
+  id: number;
+  name: string;
+  contact: string;
+}
+
+/** The members of the association, in no particular order. */
+export function listMembers(db: DatabaseSync, associationId: number): Member[] {
+  return db
+    .prepare("SELECT id, name, contact FROM members WHERE association_id = ?")
+    .all(associationId) as unknown as Member[];
+}
+
+/** The member of the association with this id, if any. */
+export function findMember(
+  db: DatabaseSync,
+  associationId: number,
+  id: number,
+): Member | undefined {
+  return db
+    .prepare(
+      "SELECT id, name, contact FROM members WHERE association_id = ? AND id = ?",
+    )
+    .get(associationId, id) as Member | undefined;
+}
+
+/** Whether another member of the association than `exceptId` has this
+ * name. */
+function nameTaken(
+  db: DatabaseSync,
+  associationId: number,
+  name: string,
+  exceptId: number | null,
+): boolean {
+  return (
+    db
+      .prepare(
+        "SELECT 1 FROM members WHERE association_id = ? AND name = ? AND id IS NOT ?",
+      )
+      .get(associationId, name, exceptId) !== undefined
+  );
+}
+
+export type AddMemberResult = "added" | "invalid" | "taken" | SignedOut;
+
+/** Adds a member to the association, on behalf of the session
+ * `sessionId`; the name and contact are already trimmed. */
+export function addMember(
+  db: DatabaseSync,
+  associationId: number,
+  name: string,
+  contact: string,
+  sessionId: number,
+): AddMemberResult {
+  return transaction(db, () => {
+    if (!isStored(db, sessionId)) return "signed-out";
+    if (name === "") return "invalid";
+    if (nameTaken(db, associationId, name, null)) return "taken";
+    const { next } = db
+      .prepare("SELECT next_member_id AS next FROM associations WHERE id = ?")
+      .get(associationId) as { next: number };
+    db.prepare(
+      "INSERT INTO members (association_id, id, name, contact) VALUES (?, ?, ?, ?)",
+    ).run(associationId, next, name, contact);
+    db.prepare("UPDATE associations SET next_member_id = ? WHERE id = ?").run(
+      next + 1,
+      associationId,
+    );
+    return "added";
+  });
+}
+
+export type EditMemberResult =
+  "edited" | "unknown" | "invalid" | "taken" | SignedOut;
+
+/** Sets the name and contact of a member of the association, on behalf
+ * of the session `sessionId`; they are already trimmed. */
+export function editMember(
+  db: DatabaseSync,
+  associationId: number,
+  id: number,
+  name: string,
+  contact: string,
+  sessionId: number,
+): EditMemberResult {
+  return transaction(db, () => {
+    if (!isStored(db, sessionId)) return "signed-out";
+    if (findMember(db, associationId, id) === undefined) return "unknown";
+    if (name === "") return "invalid";
+    if (nameTaken(db, associationId, name, id)) return "taken";
+    db.prepare(
+      "UPDATE members SET name = ?, contact = ? WHERE association_id = ? AND id = ?",
+    ).run(name, contact, associationId, id);
+    return "edited";
+  });
+}
+
+/** The name of the deleted member, or why none was. */
+export type DeleteMemberResult = { deleted: string } | "unknown" | SignedOut;
+
+/** Deletes a member of the association, on behalf of the session
+ * `sessionId`. */
+export function deleteMember(
+  db: DatabaseSync,
+  associationId: number,
+  id: number,
+  sessionId: number,
+): DeleteMemberResult {
+  return transaction(db, () => {
+    if (!isStored(db, sessionId)) return "signed-out";
+    const member = findMember(db, associationId, id);
+    if (member === undefined) return "unknown";
+    db.prepare("DELETE FROM members WHERE association_id = ? AND id = ?").run(
+      associationId,
+      id,
+    );
+    return { deleted: member.name };
+  });
+}

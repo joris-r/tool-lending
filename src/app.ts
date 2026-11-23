@@ -12,8 +12,13 @@ import {
 import type { DatabaseSync } from "node:sqlite";
 import { openDatabase } from "./db.js";
 import {
+  addMember,
   addVolunteer,
+  deleteMember,
   deleteSession,
+  editMember,
+  findMember,
+  listMembers,
   readSession,
   removeVolunteer,
   setPassword,
@@ -25,6 +30,9 @@ import {
 import {
   dashboardPage,
   homePage,
+  memberDeletionPage,
+  memberPage,
+  membersPage,
   refusalPage,
   signInPage,
   volunteersPage,
@@ -77,9 +85,14 @@ const VOLUNTEERS_ONLY = new Set([
   "/volunteers/add",
   "/volunteers/password",
   "/volunteers/remove",
+  "/members",
+  "/members/add",
+  "/members/:id",
+  "/members/:id/edit",
+  "/members/:id/delete",
 ]);
 
-/** The status of a refused case answered with the Volunteers page. */
+/** The status of a refused case answered with a page of the app. */
 const REFUSED = 422;
 
 /** The answers that are a refusal of the request. */
@@ -109,6 +122,17 @@ function fields<K extends string>(
     out[name] = values[0] as string;
   }
   return out;
+}
+
+/** The member id of the route, an integer: a number, or "unknown" for
+ * an integer too large to be any member's; undefined if not an integer. */
+function memberIdParam(
+  request: FastifyRequest,
+): number | "unknown" | undefined {
+  const raw = (request.params as { id?: string }).id ?? "";
+  if (!/^-?\d+$/.test(raw)) return undefined;
+  const id = Number(raw);
+  return Number.isSafeInteger(id) ? id : "unknown";
 }
 
 function displayLanguage(request: FastifyRequest): Language {
@@ -386,6 +410,152 @@ export function buildApp(config: AppConfig): FastifyInstance {
           text: t.volunteerRemoved(form.login),
         });
     }
+  });
+
+  /** Answers the Members page of the signed-in volunteer's association. */
+  function members(
+    request: FastifyRequest,
+    reply: FastifyReply,
+    signedIn: SignedIn,
+    status: number,
+    notice?: Notice,
+  ) {
+    const list = listMembers(db, signedIn.associationId);
+    return html(
+      reply,
+      status,
+      membersPage(displayLanguage(request), signedIn, list, notice),
+    );
+  }
+
+  app.get("/members", async (request, reply) => {
+    const signedIn = request.signedIn;
+    if (signedIn === undefined) return reply.redirect("/sign-in", 303);
+    return members(request, reply, signedIn, 200);
+  });
+
+  app.post("/members/add", async (request, reply) => {
+    const signedIn = request.signedIn;
+    if (signedIn === undefined) return reply.redirect("/sign-in", 303);
+    const form = fields(request, ["name", "contact"] as const);
+    if (form === undefined) return refuse(request, reply, 400);
+    const name = form.name.trim();
+    const t = TEXTS[displayLanguage(request)];
+    switch (
+      addMember(
+        db,
+        signedIn.associationId,
+        name,
+        form.contact.trim(),
+        signedIn.sessionId,
+      )
+    ) {
+      case "signed-out":
+        return reply.redirect("/sign-in", 303);
+      case "invalid":
+        return members(request, reply, signedIn, REFUSED, {
+          refused: true,
+          text: t.invalidMember,
+        });
+      case "taken":
+        return members(request, reply, signedIn, REFUSED, {
+          refused: true,
+          text: t.memberTaken(name),
+        });
+      case "added":
+        return members(request, reply, signedIn, 200, {
+          refused: false,
+          text: t.memberAdded(name),
+        });
+    }
+  });
+
+  app.get("/members/:id", async (request, reply) => {
+    const signedIn = request.signedIn;
+    if (signedIn === undefined) return reply.redirect("/sign-in", 303);
+    const id = memberIdParam(request);
+    if (id === undefined) return refuse(request, reply, 400);
+    const member =
+      id === "unknown" ? undefined : findMember(db, signedIn.associationId, id);
+    if (member === undefined) return refuse(request, reply, 404);
+    return html(
+      reply,
+      200,
+      memberPage(displayLanguage(request), signedIn, member),
+    );
+  });
+
+  app.post("/members/:id/edit", async (request, reply) => {
+    const signedIn = request.signedIn;
+    if (signedIn === undefined) return reply.redirect("/sign-in", 303);
+    const id = memberIdParam(request);
+    const form = fields(request, ["name", "contact"] as const);
+    if (id === undefined || form === undefined)
+      return refuse(request, reply, 400);
+    if (id === "unknown") return refuse(request, reply, 404);
+    const name = form.name.trim();
+    const language = displayLanguage(request);
+    const t = TEXTS[language];
+    const result = editMember(
+      db,
+      signedIn.associationId,
+      id,
+      name,
+      form.contact.trim(),
+      signedIn.sessionId,
+    );
+    if (result === "signed-out") return reply.redirect("/sign-in", 303);
+    if (result === "unknown") return refuse(request, reply, 404);
+    if (result === "edited") {
+      return members(request, reply, signedIn, 200, {
+        refused: false,
+        text: t.memberEdited(name),
+      });
+    }
+    // Refused: the Member page, with the record as stored.
+    const member = findMember(db, signedIn.associationId, id);
+    if (member === undefined) return refuse(request, reply, 404);
+    const text = result === "invalid" ? t.invalidMember : t.memberTaken(name);
+    return html(
+      reply,
+      REFUSED,
+      memberPage(language, signedIn, member, { refused: true, text }),
+    );
+  });
+
+  app.get("/members/:id/delete", async (request, reply) => {
+    const signedIn = request.signedIn;
+    if (signedIn === undefined) return reply.redirect("/sign-in", 303);
+    const id = memberIdParam(request);
+    if (id === undefined) return refuse(request, reply, 400);
+    const member =
+      id === "unknown" ? undefined : findMember(db, signedIn.associationId, id);
+    if (member === undefined) return refuse(request, reply, 404);
+    return html(
+      reply,
+      200,
+      memberDeletionPage(displayLanguage(request), signedIn, member),
+    );
+  });
+
+  app.post("/members/:id/delete", async (request, reply) => {
+    const signedIn = request.signedIn;
+    if (signedIn === undefined) return reply.redirect("/sign-in", 303);
+    const id = memberIdParam(request);
+    if (id === undefined) return refuse(request, reply, 400);
+    if (id === "unknown") return refuse(request, reply, 404);
+    const result = deleteMember(
+      db,
+      signedIn.associationId,
+      id,
+      signedIn.sessionId,
+    );
+    if (result === "signed-out") return reply.redirect("/sign-in", 303);
+    if (result === "unknown") return refuse(request, reply, 404);
+    return members(request, reply, signedIn, 200, {
+      refused: false,
+      text: TEXTS[displayLanguage(request)].memberDeleted(result.deleted),
+    });
   });
 
   app.get("/style.css", async (_request, reply) =>

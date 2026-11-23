@@ -40,6 +40,29 @@ export interface Texts {
   unknownVolunteer: (login: string) => string;
   shortPassword: string;
   lastVolunteer: string;
+  /** The Members page. */
+  membersTitle: string;
+  membersLink: string;
+  emptyMembers: string;
+  editLink: string;
+  addMemberHeading: string;
+  nameLabel: string;
+  /** The contact label of the add form, with what it may hold. */
+  contactHint: string;
+  contactLabel: string;
+  memberAdded: (name: string) => string;
+  memberEdited: (name: string) => string;
+  memberDeleted: (name: string) => string;
+  invalidMember: string;
+  memberTaken: (name: string) => string;
+  /** The Member page. */
+  saveButton: string;
+  deleteMemberLink: string;
+  /** The Member deletion page; the question is split around the name. */
+  deletionTitle: string;
+  deletionQuestion: readonly [string, string];
+  confirmDeletion: string;
+  cancelLink: string;
 }
 
 export const TEXTS: Record<Language, Texts> = { fr, en };

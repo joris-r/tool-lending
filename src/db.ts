@@ -20,6 +20,16 @@ const MIGRATIONS: readonly string[] = [
      volunteer_id INTEGER NOT NULL REFERENCES volunteers(id),
      last_used INTEGER NOT NULL
    );`,
+  // Members: existing associations get none, and their first id is 1.
+  `ALTER TABLE associations ADD COLUMN next_member_id INTEGER NOT NULL DEFAULT 1;
+   CREATE TABLE members (
+     association_id INTEGER NOT NULL REFERENCES associations(id),
+     id INTEGER NOT NULL,
+     name TEXT NOT NULL,
+     contact TEXT NOT NULL,
+     PRIMARY KEY (association_id, id),
+     UNIQUE (association_id, name)
+   );`,
 ];
 
 /** Opens the database at `path`, creating it if needed, and applies the

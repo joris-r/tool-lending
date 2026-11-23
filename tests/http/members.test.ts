@@ -342,6 +342,7 @@ describe("Edit member", () => {
 
   // /operations/edit-member/unknown
   // /operations/general/own-association
+  // @dev43:unsure
   it("answers 404 for the id of another association's member, of a deleted member, or of no member, nothing changes", async () => {
     const alice = await signedInAs("alice", ALICE);
     const carol = await signedInAs("carol", CAROL);
@@ -534,6 +535,7 @@ describe("Delete member", () => {
 
   // /operations/delete-member/unknown
   // /operations/general/own-association
+  // @dev43:unsure
   it("answers 404 for the id of another association's member, of a deleted member, or of no member, nothing changes", async () => {
     const alice = await signedInAs("alice", ALICE);
     const carol = await signedInAs("carol", CAROL);

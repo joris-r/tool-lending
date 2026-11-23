@@ -1,5 +1,5 @@
 import { TEXTS, otherLanguage, type Language } from "../locales/index.js";
-import type { SignedIn } from "../store.js";
+import type { Member, SignedIn } from "../store.js";
 import { html, type Html } from "./html.js";
 
 function layout(
@@ -112,6 +112,7 @@ export function dashboardPage(language: Language, signedIn: SignedIn): string {
     signedIn.associationName,
     volunteerHeader(language, signedIn),
     html`<h2>${signedIn.associationName}</h2>
+      <p><a class="nav-link" href="/members">${t.membersLink}</a></p>
       <p><a class="nav-link" href="/volunteers">${t.volunteersLink}</a></p>`,
   );
 }
@@ -122,6 +123,13 @@ export interface Notice {
   text: string;
 }
 
+function noticeHtml(notice: Notice | undefined): Html {
+  if (notice === undefined) return html``;
+  return notice.refused
+    ? html`<p class="message error" role="alert">${notice.text}</p>`
+    : html`<p class="message done" role="status">${notice.text}</p>`;
+}
+
 export function volunteersPage(
   language: Language,
   signedIn: SignedIn,
@@ -129,12 +137,7 @@ export function volunteersPage(
   notice?: Notice,
 ): string {
   const t = TEXTS[language];
-  const message =
-    notice === undefined
-      ? html``
-      : notice.refused
-        ? html`<p class="message error" role="alert">${notice.text}</p>`
-        : html`<p class="message done" role="status">${notice.text}</p>`;
+  const message = noticeHtml(notice);
   const sorted = [...logins].sort((a, b) => a.localeCompare(b, language));
   const items = sorted.map(
     (login) =>
@@ -185,5 +188,124 @@ export function volunteersPage(
         </label>
         <button type="submit" class="primary">${t.addButton}</button>
       </form>`,
+  );
+}
+
+export function membersPage(
+  language: Language,
+  signedIn: SignedIn,
+  members: readonly Member[],
+  notice?: Notice,
+): string {
+  const t = TEXTS[language];
+  const sorted = [...members].sort((a, b) =>
+    a.name.localeCompare(b.name, language),
+  );
+  const list =
+    sorted.length === 0
+      ? html`<p class="empty">${t.emptyMembers}</p>`
+      : html`<ul class="member-list">
+          ${sorted.map(
+            (m) =>
+              html`<li>
+                <span class="name">${m.name}</span>
+                <span class="contact">${m.contact}</span>
+                <a class="nav-link" href="/members/${m.id}">${t.editLink}</a>
+              </li>`,
+          )}
+        </ul>`;
+  return layout(
+    language,
+    t.membersTitle,
+    volunteerHeader(language, signedIn),
+    html`<h2>${t.membersTitle}</h2>
+      <p><a class="nav-link" href="/dashboard">${t.dashboardLink}</a></p>
+      ${noticeHtml(notice)} ${list}
+      <form class="stacked-form panel" method="post" action="/members/add">
+        <h3>${t.addMemberHeading}</h3>
+        <label
+          >${t.nameLabel}
+          <input type="text" name="name" autocomplete="off" required />
+        </label>
+        <label
+          >${t.contactHint}
+          <input type="text" name="contact" autocomplete="off" />
+        </label>
+        <button type="submit" class="primary">${t.addButton}</button>
+      </form>`,
+  );
+}
+
+export function memberPage(
+  language: Language,
+  signedIn: SignedIn,
+  member: Member,
+  notice?: Notice,
+): string {
+  const t = TEXTS[language];
+  return layout(
+    language,
+    member.name,
+    volunteerHeader(language, signedIn),
+    html`<h2>${member.name}</h2>
+      <p><a class="nav-link" href="/members">${t.membersLink}</a></p>
+      ${noticeHtml(notice)}
+      <form
+        class="stacked-form panel"
+        method="post"
+        action="/members/${member.id}/edit"
+      >
+        <label
+          >${t.nameLabel}
+          <input
+            type="text"
+            name="name"
+            value="${member.name}"
+            autocomplete="off"
+            required
+          />
+        </label>
+        <label
+          >${t.contactLabel}
+          <input
+            type="text"
+            name="contact"
+            value="${member.contact}"
+            autocomplete="off"
+          />
+        </label>
+        <button type="submit" class="primary">${t.saveButton}</button>
+      </form>
+      <p>
+        <a class="danger-link" href="/members/${member.id}/delete"
+          >${t.deleteMemberLink}</a
+        >
+      </p>`,
+  );
+}
+
+export function memberDeletionPage(
+  language: Language,
+  signedIn: SignedIn,
+  member: Member,
+): string {
+  const t = TEXTS[language];
+  const [before, after] = t.deletionQuestion;
+  return layout(
+    language,
+    t.deletionTitle,
+    volunteerHeader(language, signedIn),
+    html`<h2>${t.deletionTitle}</h2>
+      <div class="panel confirm">
+        <p>${before}<strong>${member.name}</strong>${after}</p>
+        <div class="confirm-actions">
+          <form method="post" action="/members/${member.id}/delete">
+            <button type="submit" class="danger-solid">
+              ${t.confirmDeletion}
+            </button>
+          </form>
+          <a class="nav-link" href="/members/${member.id}">${t.cancelLink}</a>
+        </div>
+      </div>`,
   );
 }

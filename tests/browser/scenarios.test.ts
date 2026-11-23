@@ -449,6 +449,7 @@ it("New member", async () => {
 });
 
 // /scenarios/edited-member
+// @dev43:unsure
 it("Edited member", async () => {
   await onOwnApp(async (own) => {
     const alices = "alice's secret phrase";
