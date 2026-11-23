@@ -15,6 +15,7 @@ A neighbourhood association using the installation.
   - [name-unique] No two associations share it.
 - `volunteers: set of /model/volunteer`
   - [one-volunteer] Not empty.
+- `members: set of /model/member`
 
 ## Volunteer
 
@@ -29,6 +30,18 @@ A person who runs an association's lending, and signs in to do so.
   lockout.
   - [failures] From 0 to 4.
 - `lock: optional time`, the end of their lockout.
+
+## Member
+
+A person who borrows the association's tools.
+
+- `id: integer`, identifies the member.
+  - [id-unique] No two members of an association share it.
+- `name: string`
+  - [name] Not empty, with no whitespace at its start or end.
+  - [name-unique] No two members of an association share it.
+- `contact: string`, how the volunteers reach them; may be empty.
+  - [contact] No whitespace at its start or end.
 
 ## Session
 

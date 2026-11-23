@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Member page — mockup</title>
+  <link rel="stylesheet" href="../../../docs/_design/style.css">
+  <link rel="stylesheet" href="members.css">
+</head>
+<body>
+  <section class="frame" lang="fr">
+    <div class="frame-label">Display language fr, alice signed in, page opened</div>
+    <header class="site-header">
+      <h1><a href="home-page.html">Prêt d'outils</a></h1>
+      <span class="signed-in">alice</span>
+      <button>Se déconnecter</button>
+    </header>
+    <main>
+      <h2>Marie Dupont</h2>
+      <p><a class="nav-link" href="members-page.html">Membres</a></p>
+      <form class="stacked-form panel">
+        <label>Nom <input type="text" name="name" value="Marie Dupont"></label>
+        <label>Contact <input type="text" name="contact" value="514 555-0123"></label>
+        <button class="primary">Enregistrer</button>
+      </form>
+      <p><a class="danger-link" href="member-deletion-page.html">Supprimer ce membre</a></p>
+    </main>
+  </section>
+
+  <section class="frame" lang="en">
+    <div class="frame-label">Display language en, alice signed in, refused</div>
+    <header class="site-header">
+      <h1><a href="home-page.html">Tool Lending</a></h1>
+      <span class="signed-in">alice</span>
+      <button>Sign out</button>
+    </header>
+    <main>
+      <h2>Marie Dupont</h2>
+      <p><a class="nav-link" href="members-page.html">Members</a></p>
+      <p class="message error">A member named Paul Tremblay already exists.</p>
+      <form class="stacked-form panel">
+        <label>Name <input type="text" name="name" value="Marie Dupont"></label>
+        <label>Contact <input type="text" name="contact" value="514 555-0123"></label>
+        <button class="primary">Save</button>
+      </form>
+      <p><a class="danger-link" href="member-deletion-page.html">Delete this member</a></p>
+    </main>
+  </section>
+</body>
+</html>
