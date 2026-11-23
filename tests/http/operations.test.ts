@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
-import { Visitor, checkInvariants, choose, lang, makeApp } from "./helpers.js";
+import { load } from "cheerio";
+import {
+  Visitor,
+  checkInvariants,
+  choose,
+  lang,
+  makeApp,
+  ORIGIN,
+  type Answer,
+} from "./helpers.js";
 
 let app: FastifyInstance;
 
@@ -205,4 +214,99 @@ describe("General", () => {
       await checkInvariants(visitor);
     },
   );
+});
+
+describe("Get stylesheet", () => {
+  // /operations/get-stylesheet/result
+  // /operations/general/public
+  it.each(["fr", "en"] as const)(
+    "answers 200 with CSS, without signing in, to a visitor in %s",
+    async (language) => {
+      const visitor = new Visitor(app);
+      if (language === "en") await choose(visitor, "en");
+      const answer = await visitor.get("/style.css");
+      expect(answer.status).toBe(200);
+      expect(String(answer.headers["content-type"])).toMatch(/^text\/css\b/);
+      expect(answer.body.trim()).not.toBe("");
+      await checkInvariants(visitor);
+    },
+  );
+});
+
+describe("Headers of every answer", () => {
+  /** One answer of each kind the app gives. */
+  async function everyKindOfAnswer(): Promise<[string, Answer][]> {
+    const visitor = new Visitor(app);
+    return [
+      ["the Home page", await visitor.get("/")],
+      ["the stylesheet", await visitor.get("/style.css")],
+      [
+        "a language chosen",
+        await visitor.post("/language", { language: "en" }),
+      ],
+      ["a malformed POST", await visitor.post("/language", "language=de")],
+      [
+        "a foreign POST",
+        await visitor.post(
+          "/language",
+          { language: "fr" },
+          "https://evil.example.com",
+        ),
+      ],
+      ["an unknown route", await visitor.get("/no-such-page")],
+      ["a bad URL", await visitor.get("/%")],
+      [
+        "a POST without Origin",
+        await visitor.post("/language", { language: "en" }, null),
+      ],
+      ["a POST of JSON", await postJson()],
+    ];
+  }
+
+  /** A POST /language whose body is not a form. */
+  async function postJson(): Promise<Answer> {
+    const res = await app.inject({
+      method: "POST",
+      url: "/language",
+      payload: JSON.stringify({ language: "en" }),
+      headers: { "content-type": "application/json", origin: ORIGIN },
+    });
+    return {
+      status: res.statusCode,
+      headers: res.headers,
+      body: res.body,
+      $: load(res.body),
+    };
+  }
+
+  /** The values of a header, each comma-separated item apart. */
+  function values(answer: Answer, name: string): string[] {
+    const value = answer.headers[name];
+    const lines = Array.isArray(value) ? value : [String(value ?? "")];
+    return lines.flatMap((line) => line.split(",")).map((v) => v.trim());
+  }
+
+  // /operations/general/framing
+  it("forbids every answer to be shown inside a frame", async () => {
+    for (const [label, answer] of await everyKindOfAnswer()) {
+      const frameOptions = values(answer, "x-frame-options");
+      const denied =
+        frameOptions.length > 0 &&
+        frameOptions.every((v) => v.toUpperCase() === "DENY");
+      const ancestors = values(answer, "content-security-policy").some(
+        (policy) =>
+          /(?:^|;)\s*frame-ancestors\s+'none'\s*(?:;|$)/i.test(policy),
+      );
+      expect(denied || ancestors, label).toBe(true);
+    }
+  });
+
+  // /operations/general/nosniff
+  it("forbids browsers to read every answer as another type", async () => {
+    for (const [label, answer] of await everyKindOfAnswer()) {
+      const options = values(answer, "x-content-type-options");
+      expect(options.length, label).toBeGreaterThan(0);
+      for (const v of options) expect(v.toLowerCase(), label).toBe("nosniff");
+    }
+  });
 });

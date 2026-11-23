@@ -164,3 +164,50 @@ describe("Language switch", () => {
       .toContain("Prêt d'outils");
   });
 });
+
+/** The app's own stylesheets the open page loaded, with their rule counts. */
+async function ownStylesheets(): Promise<number[]> {
+  const sheets = await page.evaluate(() =>
+    [...document.styleSheets].map((sheet) => ({
+      href: sheet.href,
+      rules: sheet.cssRules.length,
+    })),
+  );
+  return sheets
+    .filter((s) => s.href === `${running.origin}/style.css`)
+    .map((s) => s.rules);
+}
+
+describe.each(["fr", "en"] as const)("Stylesheet in %s", (language) => {
+  // /ui/general/stylesheet
+  it("is loaded by the Home page", async () => {
+    await openHome(language);
+    const own = await ownStylesheets();
+    expect(own).toHaveLength(1);
+    expect(own[0]).toBeGreaterThan(0);
+  });
+
+  // /ui/general/stylesheet
+  // /operations/general/refused
+  it("is loaded by a refusal page", async () => {
+    await openHome(language);
+    await Promise.all([
+      page.waitForURL(`${running.origin}/language`),
+      page.evaluate(() => {
+        const form = document.createElement("form");
+        form.method = "post";
+        form.action = "/language";
+        const input = document.createElement("input");
+        input.name = "language";
+        input.value = "de";
+        form.append(input);
+        document.body.append(form);
+        form.submit();
+      }),
+    ]);
+    await page.waitForLoadState();
+    const own = await ownStylesheets();
+    expect(own).toHaveLength(1);
+    expect(own[0]).toBeGreaterThan(0);
+  });
+});
