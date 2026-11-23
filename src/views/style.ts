@@ -49,4 +49,16 @@ button {
 button.primary { justify-self: start; background: var(--accent); color: var(--accent-text); }
 .message { margin: 0 0 1rem; padding: 0.6rem 0.9rem; border-radius: var(--radius); }
 .message.error { background: var(--error-bg); color: var(--danger); }
+.message.done { background: var(--surface); border: 1px solid var(--border); }
+.nav-link { color: var(--accent); font-weight: 600; }
+.volunteer-list { list-style: none; margin: 0 0 1.5rem; padding: 0; }
+.volunteer-list li {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 0; border-bottom: 1px solid var(--border);
+}
+.volunteer-list form { display: contents; }
+.volunteer-list .login { font-weight: 600; min-width: 8rem; margin-right: auto; }
+.volunteer-list input { width: 12rem; max-width: 100%; }
+button.danger { border-color: var(--danger); color: var(--danger); }
+h3 { margin: 0 0 0.75rem; }
 `;

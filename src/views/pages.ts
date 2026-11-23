@@ -94,19 +94,96 @@ export function signInPage(language: Language, failed: boolean): string {
   );
 }
 
-export function dashboardPage(language: Language, signedIn: SignedIn): string {
-  const t = TEXTS[language];
-  const header = html`<header class="site-header">
+/** The header of the pages of a signed-in volunteer. */
+function volunteerHeader(language: Language, signedIn: SignedIn): Html {
+  return html`<header class="site-header">
     ${homeLink(language)}
     <span class="signed-in">${signedIn.login}</span>
     <form method="post" action="/sign-out">
-      <button type="submit">${t.signOutButton}</button>
+      <button type="submit">${TEXTS[language].signOutButton}</button>
     </form>
   </header>`;
+}
+
+export function dashboardPage(language: Language, signedIn: SignedIn): string {
+  const t = TEXTS[language];
   return layout(
     language,
     signedIn.associationName,
-    header,
-    html`<h2>${signedIn.associationName}</h2>`,
+    volunteerHeader(language, signedIn),
+    html`<h2>${signedIn.associationName}</h2>
+      <p><a class="nav-link" href="/volunteers">${t.volunteersLink}</a></p>`,
+  );
+}
+
+/** A message after an operation: done, or refused. */
+export interface Notice {
+  refused: boolean;
+  text: string;
+}
+
+export function volunteersPage(
+  language: Language,
+  signedIn: SignedIn,
+  logins: readonly string[],
+  notice?: Notice,
+): string {
+  const t = TEXTS[language];
+  const message =
+    notice === undefined
+      ? html``
+      : notice.refused
+        ? html`<p class="message error" role="alert">${notice.text}</p>`
+        : html`<p class="message done" role="status">${notice.text}</p>`;
+  const sorted = [...logins].sort((a, b) => a.localeCompare(b, language));
+  const items = sorted.map(
+    (login) =>
+      html`<li>
+        <span class="login">${login}</span>
+        <form method="post" action="/volunteers/password">
+          <input type="hidden" name="login" value="${login}" />
+          <input
+            type="password"
+            name="password"
+            autocomplete="new-password"
+            aria-label="${t.newPasswordLabel}"
+            placeholder="${t.newPasswordLabel}"
+            required
+          />
+          <button type="submit">${t.setPasswordButton}</button>
+        </form>
+        <form method="post" action="/volunteers/remove">
+          <input type="hidden" name="login" value="${login}" />
+          <button type="submit" class="danger">${t.removeButton}</button>
+        </form>
+      </li>`,
+  );
+  return layout(
+    language,
+    t.volunteersTitle,
+    volunteerHeader(language, signedIn),
+    html`<h2>${t.volunteersTitle}</h2>
+      <p><a class="nav-link" href="/dashboard">${t.dashboardLink}</a></p>
+      ${message}
+      <ul class="volunteer-list">
+        ${items}
+      </ul>
+      <form class="stacked-form panel" method="post" action="/volunteers/add">
+        <h3>${t.addVolunteerHeading}</h3>
+        <label
+          >${t.loginLabel}
+          <input type="text" name="login" autocomplete="off" required />
+        </label>
+        <label
+          >${t.passwordLabel}
+          <input
+            type="password"
+            name="password"
+            autocomplete="new-password"
+            required
+          />
+        </label>
+        <button type="submit" class="primary">${t.addButton}</button>
+      </form>`,
   );
 }

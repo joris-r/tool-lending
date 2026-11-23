@@ -24,6 +24,22 @@ export interface Texts {
   passwordLabel: string;
   signInButton: string;
   signOutButton: string;
+  /** The Volunteers page. */
+  volunteersTitle: string;
+  volunteersLink: string;
+  newPasswordLabel: string;
+  setPasswordButton: string;
+  removeButton: string;
+  addVolunteerHeading: string;
+  addButton: string;
+  volunteerAdded: (login: string) => string;
+  passwordSet: (login: string) => string;
+  volunteerRemoved: (login: string) => string;
+  invalidVolunteer: string;
+  loginTaken: (login: string) => string;
+  unknownVolunteer: (login: string) => string;
+  shortPassword: string;
+  lastVolunteer: string;
 }
 
 export const TEXTS: Record<Language, Texts> = { fr, en };

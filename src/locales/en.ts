@@ -19,4 +19,22 @@ export const en: Texts = {
   passwordLabel: "Password",
   signInButton: "Sign in",
   signOutButton: "Sign out",
+  volunteersTitle: "Volunteers",
+  volunteersLink: "Volunteers",
+  newPasswordLabel: "New password",
+  setPasswordButton: "Set password",
+  removeButton: "Remove",
+  addVolunteerHeading: "Add a volunteer",
+  addButton: "Add",
+  volunteerAdded: (login) => `${login} was added to the volunteers.`,
+  passwordSet: (login) => `The password of ${login} was set.`,
+  volunteerRemoved: (login) => `${login} was removed from the volunteers.`,
+  invalidVolunteer:
+    "The login must not be empty nor hold a space, and the password must have at least 12 characters.",
+  loginTaken: (login) => `The login ${login} is already taken.`,
+  unknownVolunteer: (login) =>
+    `${login} is not a volunteer of your association.`,
+  shortPassword: "The password must have at least 12 characters.",
+  lastVolunteer:
+    "The only volunteer of the association cannot be removed: add another one first.",
 };

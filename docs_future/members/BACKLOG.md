@@ -24,31 +24,35 @@ register its members.
 
 ## Lessons
 
-- Manage volunteers, Members: future mockups load
-  `docs/_design/style.css`, then `members.css`; when integrating, move
-  the rules your pages use (`.nav-link` first, which the dashboard patch
-  needs) from `members.css` into `docs/_design/style.css` and
-  `src/views/style.ts`, and have the `docs/_design/` mockups load only
-  `style.css`.
-- Manage volunteers, Members: tests observe the state through
-  `readState` (`src/state.ts`) and check the invariants in `checkState`
-  (`tests/http/helpers.ts`); extend both with the new data, returned in
-  a stable order.
-- Manage volunteers, Members: `request.signedIn` holds the session id,
-  the login and the association's name, not its id; own-association
-  scoping needs the id added.
-- Manage volunteers: closing all sessions of a volunteer is done in
-  `resetPassword` (`src/store.ts`); reuse it for set-password and
-  remove-volunteer.
+- Members: future mockups load `docs/_design/style.css`, then
+  `members.css`; when integrating, move the remaining `members.css`
+  rules into `docs/_design/style.css` and `src/views/style.ts`, delete
+  `members.css`, and have the mockups load only `style.css`.
+- Members: tests observe the state through `readState` (`src/state.ts`)
+  and check the invariants in `checkState` (`tests/http/helpers.ts`);
+  extend both with the new data, returned in a stable order.
 - Members: the schema is migrated through `user_version` in
   `src/db.ts`; a new migration adding the members table gives existing
   associations no member, as Migrate members states.
+- Members: list every new route of a `Volunteers only.` operation in
+  `VOLUNTEERS_ONLY` (`src/app.ts`), which redirects before the body is
+  parsed, so a malformed request without a session answers 303, not
+  400.
+- Members: each write operation checks again, inside its transaction,
+  that the acting session is still stored (`isStored`,
+  `src/store.ts`), so a removed volunteer cannot finish a change.
+- Members: a refused case that answers a page uses status `REFUSED`
+  (422, `src/app.ts`), which `isRefusal` counts, so it does not
+  refresh `lastUsed`.
 
 ## For the human
 
 - Purge expired sessions.
 - Hide the password typed into the operator commands.
 - Make the scrypt cost configurable for tests, to shorten the test and
-  mutation runs.
+  mutation runs (about 76 minutes now).
 - Project CLAUDE.md: in Tests, check that each new browser test reaches
   the operation it targets before the stub fails.
+- Answer the Volunteers page's operations by a redirect
+  (Post/Redirect/Get), so that a reload does not repeat them and the
+  address stays `/volunteers`.

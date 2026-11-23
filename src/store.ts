@@ -13,6 +13,7 @@ export const MIN_PASSWORD_LENGTH = 12;
 export interface SignedIn {
   sessionId: number;
   login: string;
+  associationId: number;
   associationName: string;
 }
 
@@ -49,7 +50,7 @@ export function readSession(
   const row = db
     .prepare(
       `SELECT s.id AS sessionId, s.last_used AS lastUsed, v.login AS login,
-              a.name AS associationName
+              a.id AS associationId, a.name AS associationName
          FROM sessions s
          JOIN volunteers v ON v.id = s.volunteer_id
          JOIN associations a ON a.id = v.association_id
@@ -61,6 +62,7 @@ export function readSession(
   return {
     sessionId: row.sessionId,
     login: row.login,
+    associationId: row.associationId,
     associationName: row.associationName,
   };
 }
@@ -188,10 +190,133 @@ export async function resetPassword(
   return transaction(db, () => {
     const volunteer = findVolunteer(db, login);
     if (volunteer === undefined) return "unknown";
-    db.prepare(
-      "UPDATE volunteers SET password_hash = ?, failures = 0, lock_until = NULL WHERE id = ?",
-    ).run(hash, volunteer.id);
-    db.prepare("DELETE FROM sessions WHERE volunteer_id = ?").run(volunteer.id);
+    replacePassword(db, volunteer.id, hash, undefined);
     return "set";
+  });
+}
+
+/** Sets a volunteer's password hash, clears their failures and lock, and
+ * ends their sessions, except `keptSessionId`. */
+function replacePassword(
+  db: DatabaseSync,
+  volunteerId: number,
+  hash: string,
+  keptSessionId: number | undefined,
+): void {
+  db.prepare(
+    "UPDATE volunteers SET password_hash = ?, failures = 0, lock_until = NULL WHERE id = ?",
+  ).run(hash, volunteerId);
+  db.prepare("DELETE FROM sessions WHERE volunteer_id = ? AND id IS NOT ?").run(
+    volunteerId,
+    keptSessionId ?? null,
+  );
+}
+
+/** Whether the session is still stored: another request may have ended
+ * it since this one read it. */
+function isStored(db: DatabaseSync, sessionId: number): boolean {
+  return (
+    db.prepare("SELECT 1 FROM sessions WHERE id = ?").get(sessionId) !==
+    undefined
+  );
+}
+
+/** The volunteer of the association with this login, if any. */
+function findOwnVolunteer(
+  db: DatabaseSync,
+  associationId: number,
+  login: string,
+): { id: number } | undefined {
+  return db
+    .prepare("SELECT id FROM volunteers WHERE association_id = ? AND login = ?")
+    .get(associationId, login) as { id: number } | undefined;
+}
+
+/** The logins of the association's volunteers, in no particular order. */
+export function volunteerLogins(
+  db: DatabaseSync,
+  associationId: number,
+): string[] {
+  const rows = db
+    .prepare("SELECT login FROM volunteers WHERE association_id = ?")
+    .all(associationId) as { login: string }[];
+  return rows.map((r) => r.login);
+}
+
+/** The result of an operation whose session ended while it ran. */
+export type SignedOut = "signed-out";
+
+export type AddResult = "added" | "invalid" | "taken" | SignedOut;
+
+/** Adds a volunteer to the association, on behalf of the session
+ * `sessionId`. */
+export async function addVolunteer(
+  db: DatabaseSync,
+  associationId: number,
+  login: string,
+  password: string,
+  sessionId: number,
+): Promise<AddResult> {
+  if (!isValidLogin(login) || !isValidPassword(password)) return "invalid";
+  if (findVolunteer(db, login) !== undefined) return "taken";
+  const hash = await hashPassword(password);
+  return transaction(db, () => {
+    if (!isStored(db, sessionId)) return "signed-out";
+    // Read again: another request may have taken the login meanwhile.
+    if (findVolunteer(db, login) !== undefined) return "taken";
+    db.prepare(
+      "INSERT INTO volunteers (association_id, login, password_hash) VALUES (?, ?, ?)",
+    ).run(associationId, login, hash);
+    return "added";
+  });
+}
+
+export type SetResult = "set" | "short" | "unknown" | SignedOut;
+
+/** Sets the password of a volunteer of the association, on behalf of the
+ * session `keptSessionId`, which stays if it is theirs. */
+export async function setPassword(
+  db: DatabaseSync,
+  associationId: number,
+  login: string,
+  password: string,
+  keptSessionId: number,
+): Promise<SetResult> {
+  if (findOwnVolunteer(db, associationId, login) === undefined)
+    return "unknown";
+  if (!isValidPassword(password)) return "short";
+  const hash = await hashPassword(password);
+  return transaction(db, () => {
+    if (!isStored(db, keptSessionId)) return "signed-out";
+    const volunteer = findOwnVolunteer(db, associationId, login);
+    if (volunteer === undefined) return "unknown";
+    replacePassword(db, volunteer.id, hash, keptSessionId);
+    return "set";
+  });
+}
+
+export type RemoveResult = "removed" | "last" | "unknown" | SignedOut;
+
+/** Removes a volunteer of the association, on behalf of the session
+ * `sessionId`. */
+export function removeVolunteer(
+  db: DatabaseSync,
+  associationId: number,
+  login: string,
+  sessionId: number,
+): RemoveResult {
+  return transaction(db, () => {
+    if (!isStored(db, sessionId)) return "signed-out";
+    const volunteer = findOwnVolunteer(db, associationId, login);
+    if (volunteer === undefined) return "unknown";
+    const { count } = db
+      .prepare(
+        "SELECT COUNT(*) AS count FROM volunteers WHERE association_id = ?",
+      )
+      .get(associationId) as { count: number };
+    if (count <= 1) return "last";
+    db.prepare("DELETE FROM sessions WHERE volunteer_id = ?").run(volunteer.id);
+    db.prepare("DELETE FROM volunteers WHERE id = ?").run(volunteer.id);
+    return "removed";
   });
 }
