@@ -1,0 +1,38 @@
+{
+  "name": "tool-lending",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "check": "tsc --noEmit && eslint . && prettier --check . && vitest run && npm audit --audit-level=high",
+    "measure": "node scripts/measure.mjs"
+  },
+  "dependencies": {
+    "fastify": "^5.12.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@stryker-mutator/core": "^10.1.1",
+    "@stryker-mutator/typescript-checker": "^10.1.1",
+    "@stryker-mutator/vitest-runner": "^10.1.1",
+    "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "^5.1.1",
+    "cheerio": "^1.2.0",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "playwright": "^1.65.1",
+    "prettier": "^3.10.1",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.73.0",
+    "vitest": "^5.1.1"
+  }
+}
