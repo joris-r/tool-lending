@@ -27,6 +27,21 @@ A neighbourhood association using the installation.
 - `volunteers: set of /model/volunteer`
   - [one-volunteer] Not empty.
   - [own-volunteers] No two associations share a volunteer.
+- `members: set of /model/member`
+- `nextMemberId: integer`, the id its next new member gets.
+  - [next-member-id] Greater than the id of each of its members.
+
+## Member
+
+A person who borrows the association's tools.
+
+- `id: integer`, identifies the member.
+  - [id-unique] No two members of an association share it.
+- `name: string`
+  - [name] Not empty, with no whitespace at its start or end.
+  - [name-unique] No two members of an association share it.
+- `contact: string`, how the volunteers reach them; may be empty.
+  - [contact] No whitespace at its start or end.
 
 ## Volunteer
 

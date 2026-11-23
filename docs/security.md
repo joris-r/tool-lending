@@ -70,3 +70,5 @@
 - [own-volunteer] A volunteer misuses their own association's data,
   or takes over the account of a volunteer of their association by
   setting its password: accepted.
+- [retention] An association keeps personal data after it is no longer
+  needed: accepted, left to the association.
