@@ -49,7 +49,7 @@ function expectRefused(result: AdminResult, before: unknown): void {
 
 describe("Create association", () => {
   // /operations/create-association/created
-  it("creates an association whose only volunteer has the login and the password", async () => {
+  it("creates an association with no member and nextMemberId 1, whose only volunteer has the login and the password", async () => {
     const result = await admin(
       world,
       ["create-association", PLATEAU, "alice"],
@@ -61,6 +61,8 @@ describe("Create association", () => {
         {
           name: PLATEAU,
           volunteers: [{ login: "alice", failures: 0, lock: null }],
+          members: [],
+          nextMemberId: 1,
         },
       ],
       sessions: [],
@@ -84,6 +86,8 @@ describe("Create association", () => {
     expect(after.associations).toContainEqual({
       name: "Outils de Rosemont",
       volunteers: [{ login: "carol", failures: 0, lock: null }],
+      members: [],
+      nextMemberId: 1,
     });
     expect(after.sessions).toEqual(before.sessions);
     expect(await signedIn(v)).toBe(true);

@@ -7,7 +7,7 @@ import {
   type Page,
 } from "playwright";
 import { startApp, startForeignSite, type Running } from "./helpers.js";
-import { MINUTE, admin, createAssociation } from "../http/helpers.js";
+import { MINUTE, admin, createAssociation, state } from "../http/helpers.js";
 
 let browser: Browser;
 let running: Running;
@@ -317,5 +317,207 @@ it("Removed volunteer", async () => {
     } finally {
       await other.close();
     }
+  });
+});
+
+/** Adds a member from the page's browser, by the operation itself. */
+async function addMemberFrom(
+  own: Running,
+  name: string,
+  contact: string,
+): Promise<void> {
+  const added = await page.request.post(`${own.origin}/members/add`, {
+    form: { name, contact },
+    headers: { origin: own.origin },
+  });
+  expect(added.status()).toBe(200);
+}
+
+/** The id of the member named `name`, in the stored state. */
+function memberId(own: Running, name: string): number {
+  const found = state(own)
+    .associations.flatMap((a) => a.members)
+    .find((m) => m.name === name);
+  if (found === undefined) throw new Error(`no member ${name}`);
+  return found.id;
+}
+
+/** The list item of a member on the Members page. */
+function memberRow(name: string) {
+  return page
+    .getByRole("listitem")
+    .filter({ has: page.getByText(name, { exact: true }) });
+}
+
+// /scenarios/other-association
+it("Other association", async () => {
+  await onOwnApp(async (own) => {
+    const alices = "alice's secret phrase";
+    const carols = "carol's secret phrase";
+    await createAssociation(own, "Outils du Plateau", "alice", alices);
+    await createAssociation(own, "Outils de Rosemont", "carol", carols);
+    await signInFromPage(own, "alice", alices);
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/dashboard");
+    await addMemberFrom(own, "Marie Dupont", "514 555-0123");
+    const marie = memberId(own, "Marie Dupont");
+
+    const other = await browser.newContext();
+    try {
+      const carol = await other.newPage();
+      await carol.goto(`${own.origin}/sign-in`);
+      await carol.locator('input[name="login"]').fill("carol");
+      await carol.locator('input[name="password"]').fill(carols);
+      await carol.locator("main form").getByRole("button").click();
+      await expect.poll(() => new URL(carol.url()).pathname).toBe("/dashboard");
+      const dashboard = await carol.locator("body").innerText();
+      expect(dashboard).toContain("Outils de Rosemont");
+      expect(dashboard).not.toContain("Outils du Plateau");
+
+      const shown = await carol.request.get(`${own.origin}/members/${marie}`, {
+        maxRedirects: 0,
+      });
+      expect(shown.status()).toBe(404);
+      const deleted = await carol.request.post(
+        `${own.origin}/members/${marie}/delete`,
+        { headers: { origin: own.origin }, maxRedirects: 0 },
+      );
+      expect(deleted.status()).toBe(404);
+    } finally {
+      await other.close();
+    }
+
+    await page.goto(`${own.origin}/members`);
+    expect(await memberRow("Marie Dupont").count()).toBe(1);
+  });
+});
+
+// /scenarios/new-member
+it("New member", async () => {
+  await onOwnApp(async (own) => {
+    const alices = "alice's secret phrase";
+    await createAssociation(own, "Outils du Plateau", "alice", alices);
+    await signInFromPage(own, "alice", alices);
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/dashboard");
+
+    expect(await page.locator('main a[href="/members"]').count()).toBe(1);
+    await page.locator('main a[href="/members"]').click();
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/members");
+    expect(await page.getByRole("listitem").count()).toBe(0);
+    const empty = await page.locator("main").innerText();
+
+    const add = page.locator('main form[action="/members/add"]');
+    await add.locator('input[name="name"]').fill("Marie Dupont");
+    await add.locator('input[name="contact"]').fill("514 555-0123");
+    await add.getByRole("button").click();
+    await expect.poll(() => memberRow("Marie Dupont").count()).toBe(1);
+    expect(
+      await memberRow("Marie Dupont")
+        .getByText("514 555-0123", { exact: true })
+        .count(),
+    ).toBe(1);
+
+    // The page with the list and no message, opened aside, as a reference.
+    const aside = await page.context().newPage();
+    await aside.goto(`${own.origin}/members`);
+    const unannounced = await aside.locator("main").innerText();
+    await aside.close();
+    // The empty-list text: shown with no member only.
+    const lines = (text: string) =>
+      text
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l !== "");
+    const listed = lines(unannounced);
+    expect(lines(empty).filter((l) => !listed.includes(l))).not.toEqual([]);
+
+    await add.locator('input[name="name"]').fill("Marie Dupont");
+    await Promise.all([
+      page.waitForResponse(
+        (r) =>
+          r.url() === `${own.origin}/members/add` &&
+          r.request().method() === "POST",
+      ),
+      add.getByRole("button").click(),
+    ]);
+    await page.waitForLoadState();
+    expect((await page.locator("main").innerText()).length).toBeGreaterThan(
+      unannounced.length,
+    );
+    expect(await memberRow("Marie Dupont").count()).toBe(1);
+    expect(await page.getByRole("listitem").count()).toBe(1);
+  });
+});
+
+// /scenarios/edited-member
+it("Edited member", async () => {
+  await onOwnApp(async (own) => {
+    const alices = "alice's secret phrase";
+    await createAssociation(own, "Outils du Plateau", "alice", alices);
+    await signInFromPage(own, "alice", alices);
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/dashboard");
+    await addMemberFrom(own, "Marie Dupont", "514 555-0123");
+
+    await page.goto(`${own.origin}/members`);
+    await memberRow("Marie Dupont").locator("a").click();
+    await expect.poll(() => page.title()).toBe("Marie Dupont");
+    const name = page.locator('main input[name="name"]');
+    const contact = page.locator('main input[name="contact"]');
+    expect(await name.inputValue()).toBe("Marie Dupont");
+    expect(await contact.inputValue()).toBe("514 555-0123");
+
+    await contact.fill("marie@example.org");
+    await page
+      .locator("main form")
+      .filter({ has: name })
+      .getByRole("button")
+      .click();
+    await expect.poll(() => page.title()).toBe("Membres");
+    expect(
+      await memberRow("Marie Dupont")
+        .getByText("marie@example.org", { exact: true })
+        .count(),
+    ).toBe(1);
+  });
+});
+
+// /scenarios/deleted-member
+it("Deleted member", async () => {
+  await onOwnApp(async (own) => {
+    const alices = "alice's secret phrase";
+    await createAssociation(own, "Outils du Plateau", "alice", alices);
+    await signInFromPage(own, "alice", alices);
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/dashboard");
+    await addMemberFrom(own, "Marie Dupont", "");
+    await addMemberFrom(own, "Paul Tremblay", "");
+    const marie = memberId(own, "Marie Dupont");
+
+    await page.goto(`${own.origin}/members/${marie}`);
+    await page.locator(`main a[href="/members/${marie}/delete"]`).click();
+    await expect
+      .poll(() => new URL(page.url()).pathname)
+      .toBe(`/members/${marie}/delete`);
+    expect(await page.locator("main").innerText()).toContain("Marie Dupont");
+
+    await page.locator(`main a[href="/members/${marie}"]`).click();
+    await expect
+      .poll(() => new URL(page.url()).pathname)
+      .toBe(`/members/${marie}`);
+    await expect.poll(() => page.title()).toBe("Marie Dupont");
+
+    await page.locator(`main a[href="/members/${marie}/delete"]`).click();
+    await expect
+      .poll(() => new URL(page.url()).pathname)
+      .toBe(`/members/${marie}/delete`);
+    await page
+      .locator(`main form[action="/members/${marie}/delete"]`)
+      .getByRole("button")
+      .click();
+    await expect.poll(() => page.title()).toBe("Membres");
+    expect(await memberRow("Paul Tremblay").count()).toBe(1);
+    expect(await memberRow("Marie Dupont").count()).toBe(0);
+    expect(await page.getByRole("listitem").count()).toBe(1);
+
+    const again = await page.goto(`${own.origin}/members/${marie}`);
+    expect(again?.status()).toBe(404);
   });
 });

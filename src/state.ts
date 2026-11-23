@@ -10,9 +10,18 @@ export interface VolunteerState {
   lock: Date | null;
 }
 
+export interface MemberState {
+  id: number;
+  name: string;
+  contact: string;
+}
+
 export interface AssociationState {
   name: string;
   volunteers: VolunteerState[];
+  /** Its members, in order of id. */
+  members: MemberState[];
+  nextMemberId: number;
 }
 
 export interface SessionState {
@@ -60,6 +69,8 @@ export function readState(databasePath: string): State {
             failures: v.failures,
             lock: v.lock_until === null ? null : new Date(v.lock_until),
           })),
+        members: [],
+        nextMemberId: 0,
       })),
       sessions: sessions.map((s) => ({
         login: s.login,

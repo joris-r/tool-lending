@@ -208,6 +208,23 @@ export function checkState(current: State): void {
       expect(volunteer.failures).toBeGreaterThanOrEqual(0);
       expect(volunteer.failures).toBeLessThanOrEqual(4);
     }
+    const ids = association.members.map((m) => m.id);
+    const memberNames = association.members.map((m) => m.name);
+    for (const member of association.members) {
+      expect(Number.isInteger(member.id)).toBe(true);
+      // /model/member/name
+      expect(member.name).not.toBe("");
+      expect(member.name).toBe(member.name.trim());
+      // /model/member/contact
+      expect(member.contact).toBe(member.contact.trim());
+      // /model/association/next-member-id
+      expect(association.nextMemberId).toBeGreaterThan(member.id);
+    }
+    expect(Number.isInteger(association.nextMemberId)).toBe(true);
+    // /model/member/id-unique
+    expect(new Set(ids).size).toBe(ids.length);
+    // /model/member/name-unique
+    expect(new Set(memberNames).size).toBe(memberNames.length);
   }
   // /model/association/name-unique
   expect(new Set(names).size).toBe(names.length);
