@@ -15,6 +15,9 @@ browser keeps.
   with a message, in the display language.
 - [unknown-language] A language kept by the browser that is not a
   /model/language is read as no `language`.
+- [framing] Every answer forbids browsers to show it inside a frame.
+- [nosniff] Every answer forbids browsers to read it as another type
+  than the one it declares.
 
 ## Initial state
 
@@ -26,6 +29,12 @@ browser keeps.
 HTTP: `GET /`.
 
 - [result] Answers 200 with the Home page, in the display language.
+
+## Get stylesheet
+
+HTTP: `GET /style.css`.
+
+- [result] Answers 200 with the stylesheet of the pages, as CSS.
 
 ## Choose language
 

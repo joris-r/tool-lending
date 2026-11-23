@@ -4,6 +4,8 @@
 
 - [display-language] Every page is in the display language, and its
   `html` element carries it in its `lang` attribute.
+- [stylesheet] Every page loads /operations/get-stylesheet as its
+  stylesheet.
 
 ## Home page
 
