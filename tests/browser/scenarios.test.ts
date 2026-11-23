@@ -189,3 +189,133 @@ it("Password guessing", async () => {
     await expect.poll(() => page.title()).toBe("Outils du Plateau");
   });
 });
+
+// /scenarios/new-volunteer
+it("New volunteer", async () => {
+  await onOwnApp(async (own) => {
+    const password = "alice's secret phrase";
+    const dans = "dan's own password";
+    await createAssociation(own, "Outils du Plateau", "alice", password);
+    await signInFromPage(own, "alice", password);
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/dashboard");
+
+    await page.locator('main a[href="/volunteers"]').click();
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/volunteers");
+
+    const add = page
+      .locator("main form")
+      .filter({ has: page.locator('input[name="login"]:visible') });
+    await add.locator('input[name="login"]').fill("dan");
+    await add.locator('input[name="password"]').fill(dans);
+    await add.getByRole("button").click();
+    await expect
+      .poll(() => page.getByRole("listitem").filter({ hasText: "dan" }).count())
+      .toBe(1);
+    expect(
+      await page.getByRole("listitem").filter({ hasText: "alice" }).count(),
+    ).toBe(1);
+    expect(await page.getByRole("listitem").count()).toBe(2);
+
+    const other = await browser.newContext();
+    try {
+      const dan = await other.newPage();
+      await dan.goto(`${own.origin}/sign-in`);
+      await dan.locator('input[name="login"]').fill("dan");
+      await dan.locator('input[name="password"]').fill(dans);
+      await dan.locator("main form").getByRole("button").click();
+      await expect.poll(() => new URL(dan.url()).pathname).toBe("/dashboard");
+      expect(
+        await dan
+          .getByRole("heading", { name: "Outils du Plateau", exact: true })
+          .count(),
+      ).toBe(1);
+    } finally {
+      await other.close();
+    }
+  });
+});
+
+// /scenarios/removed-volunteer
+it("Removed volunteer", async () => {
+  await onOwnApp(async (own) => {
+    const alices = "alice's secret phrase";
+    const bobs = "bob's own password";
+    await createAssociation(own, "Outils du Plateau", "alice", alices);
+    await signInFromPage(own, "alice", alices);
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/dashboard");
+    const added = await page.request.post(`${own.origin}/volunteers/add`, {
+      form: { login: "bob", password: bobs },
+      headers: { origin: own.origin },
+    });
+    expect(added.status()).toBe(200);
+
+    const other = await browser.newContext();
+    try {
+      const bob = await other.newPage();
+      await bob.goto(`${own.origin}/sign-in`);
+      await bob.locator('input[name="login"]').fill("bob");
+      await bob.locator('input[name="password"]').fill(bobs);
+      await bob.locator("main form").getByRole("button").click();
+      await expect.poll(() => new URL(bob.url()).pathname).toBe("/dashboard");
+
+      const rowOf = (login: string) =>
+        page
+          .getByRole("listitem")
+          .filter({ has: page.getByText(login, { exact: true }) });
+      // The remove button: the row's button not sent with a password.
+      const removeOf = (login: string) =>
+        rowOf(login)
+          .locator("form")
+          .filter({ hasNot: page.locator('input[type="password"]') })
+          .getByRole("button");
+      await page.goto(`${own.origin}/volunteers`);
+      await removeOf("bob").click();
+      await expect.poll(() => rowOf("bob").count()).toBe(0);
+      expect(await rowOf("alice").count()).toBe(1);
+      expect(await page.getByRole("listitem").count()).toBe(1);
+
+      await bob.reload();
+      await expect.poll(() => new URL(bob.url()).pathname).toBe("/sign-in");
+      const opened = await bob.locator("main").innerText();
+      await bob.locator('input[name="login"]').fill("bob");
+      await bob.locator('input[name="password"]').fill(bobs);
+      const [answer] = await Promise.all([
+        bob.waitForResponse(
+          (r) =>
+            r.url() === `${own.origin}/sign-in` &&
+            r.request().method() === "POST",
+        ),
+        bob.locator("main form").getByRole("button").click(),
+      ]);
+      expect(answer.status()).toBe(401);
+      await bob.waitForLoadState();
+      expect(new URL(bob.url()).pathname).toBe("/sign-in");
+      expect((await bob.locator("main").innerText()).length).toBeGreaterThan(
+        opened.length,
+      );
+
+      // The page without a message, opened aside, as a reference.
+      const aside = await page.context().newPage();
+      await aside.goto(`${own.origin}/volunteers`);
+      const unannounced = await aside.locator("main").innerText();
+      await aside.close();
+      await Promise.all([
+        page.waitForResponse(
+          (r) =>
+            r.url() === `${own.origin}/volunteers/remove` &&
+            r.request().method() === "POST",
+        ),
+        removeOf("alice").click(),
+      ]);
+      await page.waitForLoadState();
+      const refused = await page.locator("main").innerText();
+      expect(refused).not.toContain("bob");
+      expect(refused.length).toBeGreaterThan(unannounced.length);
+      expect((await page.title()).trim()).toBe("Bénévoles");
+      expect(await rowOf("alice").count()).toBe(1);
+      expect(await page.getByRole("listitem").count()).toBe(1);
+    } finally {
+      await other.close();
+    }
+  });
+});
