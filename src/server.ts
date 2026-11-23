@@ -6,7 +6,13 @@ if (!publicOrigin) {
   process.exit(1);
 }
 
-const app = buildApp({ publicOrigin, logger: true });
+const databasePath = process.env.DATABASE_PATH;
+if (!databasePath) {
+  console.error("DATABASE_PATH is required, e.g. /data/tool-lending.db");
+  process.exit(1);
+}
+
+const app = buildApp({ publicOrigin, databasePath, logger: true });
 const host = process.env.HOST ?? "0.0.0.0";
 const port = Number(process.env.PORT ?? 3000);
 

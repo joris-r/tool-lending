@@ -1,12 +1,76 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { load, type CheerioAPI } from "cheerio";
 import { expect } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { buildApp } from "../../src/app.js";
+import { runAdmin, type AdminResult } from "../../src/admin.js";
+import { readState, type State } from "../../src/state.js";
 
 export const ORIGIN = "https://pret.example.org";
 
+export const MINUTE = 60_000;
+export const DAY = 24 * 60 * MINUTE;
+
+/** A path for a new, empty database file. */
+export function tempDatabase(): string {
+  return join(mkdtempSync(join(tmpdir(), "tool-lending-")), "test.db");
+}
+
+/** A clock the tests move by hand. */
+export class Clock {
+  constructor(public time = Date.UTC(2026, 10, 23, 9, 0, 0)) {}
+  readonly now = (): Date => new Date(this.time);
+  advance(ms: number): void {
+    this.time += ms;
+  }
+}
+
+/** The app on a new database, with its clock. */
+export interface World {
+  app: FastifyInstance;
+  databasePath: string;
+  clock: Clock;
+}
+
+export function makeWorld(): World {
+  const databasePath = tempDatabase();
+  const clock = new Clock();
+  const app = buildApp({ publicOrigin: ORIGIN, databasePath, now: clock.now });
+  return { app, databasePath, clock };
+}
+
 export function makeApp(): FastifyInstance {
-  return buildApp({ publicOrigin: ORIGIN });
+  return makeWorld().app;
+}
+
+/** Runs a command of the operator on the world's database. */
+export function admin(
+  world: Pick<World, "databasePath">,
+  args: string[],
+  stdin = "",
+): Promise<AdminResult> {
+  return runAdmin(args, { databasePath: world.databasePath, stdin });
+}
+
+/** Creates an association by the operator's command; it must succeed. */
+export async function createAssociation(
+  world: Pick<World, "databasePath">,
+  name: string,
+  login: string,
+  password: string,
+): Promise<void> {
+  const result = await admin(
+    world,
+    ["create-association", name, login],
+    `${password}\n`,
+  );
+  expect(result.status, result.output).toBe(0);
+}
+
+export function state(world: Pick<World, "databasePath">): State {
+  return readState(world.databasePath);
 }
 
 export interface Answer {
@@ -93,8 +157,65 @@ export async function choose(
   return answer;
 }
 
-// /model/language/languages
-export async function checkInvariants(visitor: Visitor): Promise<void> {
+/** Signs a visitor in; it must succeed. */
+export async function signIn(
+  visitor: Visitor,
+  login: string,
+  password: string,
+): Promise<Answer> {
+  const answer = await visitor.post("/sign-in", { login, password });
+  expect(answer.status).toBe(303);
+  return answer;
+}
+
+/** Whether the visitor has a signed-in volunteer, as /dashboard tells. */
+export async function signedIn(visitor: Visitor): Promise<boolean> {
+  const answer = await visitor.get("/dashboard");
+  if (answer.status === 200) return true;
+  expect(answer.status).toBe(303);
+  expect(answer.headers.location).toBe("/sign-in");
+  return false;
+}
+
+/** The invariants of the model, on the visitor's language and, given a
+ * database, on the stored state. */
+export async function checkInvariants(
+  visitor: Visitor,
+  databasePath?: string,
+): Promise<void> {
+  // /model/language/languages
   const answer = await visitor.get("/");
   expect(["fr", "en"]).toContain(lang(answer));
+  if (databasePath !== undefined) checkState(readState(databasePath));
+}
+
+export function checkState(current: State): void {
+  const names = current.associations.map((a) => a.name);
+  const logins = current.associations.flatMap((a) =>
+    a.volunteers.map((v) => v.login),
+  );
+  for (const association of current.associations) {
+    // /model/association/name
+    expect(association.name).not.toBe("");
+    expect(association.name).toBe(association.name.trim());
+    // /model/association/one-volunteer
+    expect(association.volunteers.length).toBeGreaterThan(0);
+    for (const volunteer of association.volunteers) {
+      // /model/volunteer/login
+      expect(volunteer.login).toMatch(/^\S+$/);
+      // /model/volunteer/failures
+      expect(Number.isInteger(volunteer.failures)).toBe(true);
+      expect(volunteer.failures).toBeGreaterThanOrEqual(0);
+      expect(volunteer.failures).toBeLessThanOrEqual(4);
+    }
+  }
+  // /model/association/name-unique
+  expect(new Set(names).size).toBe(names.length);
+  // /model/association/own-volunteers
+  // /model/volunteer/login-unique
+  expect(new Set(logins).size).toBe(logins.length);
+  // /model/session/session-volunteer
+  for (const session of current.sessions) {
+    expect(logins).toContain(session.login);
+  }
 }

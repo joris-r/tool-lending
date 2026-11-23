@@ -15,6 +15,10 @@ import { STYLE } from "./views/style.js";
 export interface AppConfig {
   /** The origin visitors reach the app at, e.g. `https://pret.example.org`. */
   publicOrigin: string;
+  /** The SQLite database file, e.g. the value of `DATABASE_PATH`. */
+  databasePath: string;
+  /** The current time; the system clock by default. */
+  now?: () => Date;
   /** Logs requests and errors to stdout. */
   logger?: boolean;
 }

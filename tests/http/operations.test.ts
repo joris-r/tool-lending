@@ -5,16 +5,25 @@ import {
   Visitor,
   checkInvariants,
   choose,
+  createAssociation,
   lang,
-  makeApp,
+  makeWorld,
   ORIGIN,
+  signIn,
+  signedIn,
+  state,
   type Answer,
+  type World,
 } from "./helpers.js";
 
+const PASSWORD = "correct horse battery";
+
+let world: World;
 let app: FastifyInstance;
 
 beforeEach(async () => {
-  app = makeApp();
+  world = makeWorld();
+  app = world.app;
   await app.ready();
 });
 
@@ -42,7 +51,16 @@ describe("Show home page", () => {
     expect(answer.status).toBe(200);
     expect(isHtmlPage(answer)).toBe(true);
     expect(lang(answer)).toBe("fr");
-    await checkInvariants(visitor);
+    expect(await signedIn(visitor)).toBe(false);
+    await checkInvariants(visitor, world.databasePath);
+  });
+
+  // /operations/initial-state/no-association
+  it("starts with no association and no session", async () => {
+    const visitor = new Visitor(app);
+    await visitor.get("/");
+    expect(state(world)).toEqual({ associations: [], sessions: [] });
+    await checkInvariants(visitor, world.databasePath);
   });
 
   // /operations/show-home-page/result
@@ -52,7 +70,7 @@ describe("Show home page", () => {
     const answer = await visitor.get("/");
     expect(answer.status).toBe(200);
     expect(lang(answer)).toBe("en");
-    await checkInvariants(visitor);
+    await checkInvariants(visitor, world.databasePath);
   });
 });
 
@@ -73,7 +91,7 @@ describe("Choose language", () => {
       expect(answer.status).toBe(303);
       expect(answer.headers.location).toBe("/");
       expect(lang(await visitor.get("/"))).toBe(to);
-      await checkInvariants(visitor);
+      await checkInvariants(visitor, world.databasePath);
     },
   );
 
@@ -84,7 +102,7 @@ describe("Choose language", () => {
     for (let i = 0; i < 3; i++) expect(lang(await visitor.get("/"))).toBe("en");
     await choose(visitor, "fr");
     for (let i = 0; i < 3; i++) expect(lang(await visitor.get("/"))).toBe("fr");
-    await checkInvariants(visitor);
+    await checkInvariants(visitor, world.databasePath);
   });
 
   // /operations/choose-language/kept
@@ -94,8 +112,8 @@ describe("Choose language", () => {
     await choose(english, "en");
     expect(lang(await french.get("/"))).toBe("fr");
     expect(lang(await english.get("/"))).toBe("en");
-    await checkInvariants(english);
-    await checkInvariants(french);
+    await checkInvariants(english, world.databasePath);
+    await checkInvariants(french, world.databasePath);
   });
 
   // /operations/choose-language/kept
@@ -104,7 +122,7 @@ describe("Choose language", () => {
     await choose(visitor, "en");
     visitor.cookies.clear();
     expect(lang(await visitor.get("/"))).toBe("fr");
-    await checkInvariants(visitor);
+    await checkInvariants(visitor, world.databasePath);
   });
 });
 
@@ -123,7 +141,7 @@ describe("General", () => {
     const answer = await visitor.post("/language", { language: "en" }, origin);
     expect(answer.status).toBe(403);
     expect(lang(await visitor.get("/"))).toBe("fr");
-    await checkInvariants(visitor);
+    await checkInvariants(visitor, world.databasePath);
   });
 
   // /operations/general/origin
@@ -138,7 +156,7 @@ describe("General", () => {
     );
     expect(answer.status).toBe(403);
     expect(lang(await visitor.get("/"))).toBe("en");
-    await checkInvariants(visitor);
+    await checkInvariants(visitor, world.databasePath);
   });
 
   // /operations/general/origin
@@ -152,7 +170,7 @@ describe("General", () => {
       const visitor = new Visitor(app);
       const answer = await visitor.post("/language", "language=de", origin);
       expect(answer.status).toBe(403);
-      await checkInvariants(visitor);
+      await checkInvariants(visitor, world.databasePath);
     },
   );
 
@@ -171,7 +189,7 @@ describe("General", () => {
     const answer = await visitor.post("/language", form);
     expect(answer.status).toBe(400);
     expect(lang(await visitor.get("/"))).toBe("en");
-    await checkInvariants(visitor);
+    await checkInvariants(visitor, world.databasePath);
   });
 
   // /operations/general/refused
@@ -195,7 +213,7 @@ describe("General", () => {
         expect(text).not.toBe("");
         expect(text).not.toBe(home);
       }
-      await checkInvariants(visitor);
+      await checkInvariants(visitor, world.databasePath);
     },
   );
 
@@ -211,7 +229,7 @@ describe("General", () => {
       const answer = await visitor.get("/");
       expect(answer.status).toBe(200);
       expect(lang(answer)).toBe("fr");
-      await checkInvariants(visitor);
+      await checkInvariants(visitor, world.databasePath);
     },
   );
 });
@@ -228,7 +246,7 @@ describe("Get stylesheet", () => {
       expect(answer.status).toBe(200);
       expect(String(answer.headers["content-type"])).toMatch(/^text\/css\b/);
       expect(answer.body.trim()).not.toBe("");
-      await checkInvariants(visitor);
+      await checkInvariants(visitor, world.databasePath);
     },
   );
 });
@@ -237,7 +255,18 @@ describe("Headers of every answer", () => {
   /** One answer of each kind the app gives. */
   async function everyKindOfAnswer(): Promise<[string, Answer][]> {
     const visitor = new Visitor(app);
+    await createAssociation(world, "Outils du Plateau", "alice", PASSWORD);
+    const volunteer = new Visitor(app);
     return [
+      ["the Sign-in page", await visitor.get("/sign-in")],
+      [
+        "a failed sign-in",
+        await visitor.post("/sign-in", { login: "alice", password: "x" }),
+      ],
+      ["a dashboard without session", await visitor.get("/dashboard")],
+      ["a sign-in", await signIn(volunteer, "alice", PASSWORD)],
+      ["the Dashboard page", await volunteer.get("/dashboard")],
+      ["a sign-out", await volunteer.post("/sign-out", {})],
       ["the Home page", await visitor.get("/")],
       ["the stylesheet", await visitor.get("/style.css")],
       [
