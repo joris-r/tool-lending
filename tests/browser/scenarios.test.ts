@@ -449,7 +449,6 @@ it("New member", async () => {
 });
 
 // /scenarios/edited-member
-// @dev43:unsure
 it("Edited member", async () => {
   await onOwnApp(async (own) => {
     const alices = "alice's secret phrase";
@@ -467,11 +466,7 @@ it("Edited member", async () => {
     expect(await contact.inputValue()).toBe("514 555-0123");
 
     await contact.fill("marie@example.org");
-    await page
-      .locator("main form")
-      .filter({ has: name })
-      .getByRole("button")
-      .click();
+    await page.locator("main form").getByRole("button").click();
     await expect.poll(() => page.title()).toBe("Membres");
     expect(
       await memberRow("Marie Dupont")

@@ -100,6 +100,15 @@ async function add(v: Visitor, name: string, contact = ""): Promise<void> {
   expect(answer.status).toBe(200);
 }
 
+/** Has `carol` add members to her association, and returns the id of
+ * the last one, "Paul Tremblay": ids are counted per association, so it
+ * is above the ids alice's few members ever had. */
+async function foreignMember(carol: Visitor): Promise<number> {
+  for (const n of [1, 2, 3, 4]) await add(carol, `Membre ${n}`);
+  await add(carol, "Paul Tremblay", "paul@example.org");
+  return idOf(ROSEMONT, "Paul Tremblay");
+}
+
 describe("Show members", () => {
   // /operations/show-members/result
   // /operations/general/own-association
@@ -277,18 +286,13 @@ describe("Show member", () => {
   it("answers 404 for the id of another association's member, of a deleted member, or of no member", async () => {
     const alice = await signedInAs("alice", ALICE);
     const carol = await signedInAs("carol", CAROL);
-    await add(carol, "Paul Tremblay", "paul@example.org");
+    const paul = await foreignMember(carol);
     await add(alice, "Marie Dupont");
     const marie = idOf(PLATEAU, "Marie Dupont");
     expect((await alice.post(`/members/${marie}/delete`, {})).status).toBe(200);
+    expect(paul).toBeGreaterThan(association(PLATEAU).nextMemberId);
     const before = state(world);
-    for (const id of [
-      idOf(ROSEMONT, "Paul Tremblay"),
-      marie,
-      association(PLATEAU).nextMemberId,
-      0,
-      -1,
-    ]) {
+    for (const id of [paul, marie, association(PLATEAU).nextMemberId, 0, -1]) {
       const answer = await alice.get(`/members/${id}`);
       expect(answer.status, `id ${id}`).toBe(404);
       expect(mainText(answer)).not.toContain("paul@example.org");
@@ -342,25 +346,25 @@ describe("Edit member", () => {
 
   // /operations/edit-member/unknown
   // /operations/general/own-association
-  // @dev43:unsure
   it("answers 404 for the id of another association's member, of a deleted member, or of no member, nothing changes", async () => {
     const alice = await signedInAs("alice", ALICE);
     const carol = await signedInAs("carol", CAROL);
-    await add(carol, "Paul Tremblay", "paul@example.org");
+    const paul = await foreignMember(carol);
     await add(alice, "Marie Dupont");
     await add(alice, "Sophie Roy");
     const sophie = idOf(PLATEAU, "Sophie Roy");
     expect((await alice.post(`/members/${sophie}/delete`, {})).status).toBe(
       200,
     );
+    expect(paul).toBeGreaterThan(association(PLATEAU).nextMemberId);
     const before = state(world);
     for (const [id, name] of [
-      [idOf(ROSEMONT, "Paul Tremblay"), "Paul Martin"],
+      [paul, "Paul Martin"],
       [sophie, "Sophie Roy"],
       [association(PLATEAU).nextMemberId, "Nouveau Membre"],
       // Unknown comes first, before the name is read.
-      [idOf(ROSEMONT, "Paul Tremblay"), ""],
-      [idOf(ROSEMONT, "Paul Tremblay"), "Marie Dupont"],
+      [paul, ""],
+      [paul, "Marie Dupont"],
     ] as const) {
       const answer = await alice.post(`/members/${id}/edit`, {
         name,
@@ -491,16 +495,13 @@ describe("Show member deletion", () => {
   it("answers 404 for the id of another association's member, of a deleted member, or of no member", async () => {
     const alice = await signedInAs("alice", ALICE);
     const carol = await signedInAs("carol", CAROL);
-    await add(carol, "Paul Tremblay");
+    const paul = await foreignMember(carol);
     await add(alice, "Marie Dupont");
     const marie = idOf(PLATEAU, "Marie Dupont");
     expect((await alice.post(`/members/${marie}/delete`, {})).status).toBe(200);
+    expect(paul).toBeGreaterThan(association(PLATEAU).nextMemberId);
     const before = state(world);
-    for (const id of [
-      idOf(ROSEMONT, "Paul Tremblay"),
-      marie,
-      association(PLATEAU).nextMemberId,
-    ]) {
+    for (const id of [paul, marie, association(PLATEAU).nextMemberId]) {
       const answer = await alice.get(`/members/${id}/delete`);
       expect(answer.status, `id ${id}`).toBe(404);
       expect(mainText(answer)).not.toContain("Paul Tremblay");
@@ -535,23 +536,19 @@ describe("Delete member", () => {
 
   // /operations/delete-member/unknown
   // /operations/general/own-association
-  // @dev43:unsure
   it("answers 404 for the id of another association's member, of a deleted member, or of no member, nothing changes", async () => {
     const alice = await signedInAs("alice", ALICE);
     const carol = await signedInAs("carol", CAROL);
-    await add(carol, "Paul Tremblay");
+    const paul = await foreignMember(carol);
     await add(alice, "Marie Dupont");
     await add(alice, "Sophie Roy");
     const sophie = idOf(PLATEAU, "Sophie Roy");
     expect((await alice.post(`/members/${sophie}/delete`, {})).status).toBe(
       200,
     );
+    expect(paul).toBeGreaterThan(association(PLATEAU).nextMemberId);
     const before = state(world);
-    for (const id of [
-      idOf(ROSEMONT, "Paul Tremblay"),
-      sophie,
-      association(PLATEAU).nextMemberId,
-    ]) {
+    for (const id of [paul, sophie, association(PLATEAU).nextMemberId]) {
       const answer = await alice.post(`/members/${id}/delete`, {});
       expect(answer.status, `id ${id}`).toBe(404);
     }
