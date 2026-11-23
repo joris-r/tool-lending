@@ -8,6 +8,14 @@
 - Pages rendered on the server, as HTML; HTMX for partial updates.
   HTMX is served by the app, not from a CDN.
 - Templates escape every value by default.
+- Passwords are stored only as salted hashes, made with `scrypt` from
+  Node.js `crypto`.
+- A browser keeps its session as a random token of at least 128 bits,
+  in an `HttpOnly`, `SameSite=Lax` cookie, `Secure` when
+  `PUBLIC_ORIGIN` is `https`.
+- The operator's commands run on the server as
+  `node dist/admin.js <command>`, on the database of `DATABASE_PATH`;
+  the HTTP interface creates no association.
 - SQLite, in the file named by `DATABASE_PATH`; schema changes are
   numbered SQL migrations, applied at start.
 - Configuration by environment variables only: `HOST`, `PORT`,
@@ -18,8 +26,8 @@
 ## Conventions
 
 - Layout: `src/` for the server, `src/views/` for the templates,
-  `src/locales/` for the texts, `tests/http/` and `tests/browser/`
-  for the tests.
+  `src/locales/` for the texts, `tests/http/`, `tests/browser/` and
+  `tests/command/` for the tests.
 - Code, identifiers and documentation in English; every displayed
   text exists in French and English.
 - The specification states the exact texts only in
@@ -34,6 +42,8 @@
     Fastify's request injection.
   - Browser: the display and the triggers, with Playwright on
     Chromium.
+  - Command: the operator's commands, their exit status, their output
+    and the state.
 - `npm run check` runs, and must pass before every commit:
   `tsc --noEmit`, ESLint, Prettier in check mode, the tests, and
   `npm audit --audit-level=high` as the dependency audit.
