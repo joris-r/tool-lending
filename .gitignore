@@ -2,4 +2,6 @@ node_modules/
 reports/
 .stryker-tmp/
 *.db
+*.db-shm
+*.db-wal
 dist/
